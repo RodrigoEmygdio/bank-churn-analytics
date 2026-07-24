@@ -1,0 +1,442 @@
+# ADR-0001: Application Architecture and Model Orchestration
+
+- Status: Proposed
+- Date: 2026-07-24
+- Decision owners: Project team
+- Scope: Churn prediction application
+- Based on: `docs/architecture/repository-diagnosis.md`
+
+## Context
+
+The repository contains an academic bank churn Machine Learning project with two exported local scikit-learn pipelines:
+
+- Gradient Boosting, declared as the primary model;
+- Decision Tree, declared as the complementary sensitivity model.
+
+`artifacts/metadata.json` defines artifact filenames, model roles, positive class, input schema, validation metrics, SHA-256 hashes, and the four-level decision policy. `artifacts/reference_predictions.csv` provides the integration testing contract.
+
+The repository does not yet contain application code or tests. The approved application direction is a Streamlit application organized as `app.py` plus package modules under `src/churn_app`.
+
+The project is academic. Its output must support analysis and must not claim deterministic certainty about customer churn.
+
+## Problem Statement
+
+The project needs an architectural baseline for implementing a Streamlit churn-risk application that executes both trained pipelines, preserves individual model outputs, handles model disagreement safely, derives the required input features consistently with training, and remains testable against repository-controlled artifacts and reference predictions.
+
+## Decision Drivers
+
+- consistency between training and inference;
+- reproducibility;
+- interpretability;
+- testability;
+- simplicity;
+- traceability;
+- safe handling of model disagreement;
+- compatibility with Streamlit;
+- limited academic project scope.
+
+## Considered Options
+
+### Option 1 — Monolithic Streamlit application
+
+Description:
+
+Place form handling, validation, artifact loading, inference, decision policy, and result presentation directly in `app.py`.
+
+Advantages:
+
+- fastest initial file count;
+- minimal import structure;
+- easy to run with Streamlit.
+
+Disadvantages:
+
+- weak separation of concerns;
+- harder to unit test business rules independently;
+- higher risk of mixing UI, model loading, and decision logic;
+- conflicts with `AGENTS.md` architecture rules.
+
+Suitability:
+
+- Not suitable for the approved baseline.
+
+### Option 2 — Modular in-process Streamlit application
+
+Description:
+
+Use Streamlit as the application runtime while separating composition, configuration, domain types, artifact loading, input construction, prediction, decision policy, and UI presentation under `src/churn_app`.
+
+Advantages:
+
+- satisfies `AGENTS.md` separation requirements;
+- keeps deployment simple for an academic project;
+- enables focused unit and integration tests;
+- avoids unnecessary service boundaries;
+- preserves traceability to metadata and reference predictions.
+
+Disadvantages:
+
+- requires a small package scaffold before feature implementation;
+- requires explicit boundaries between modules.
+
+Suitability:
+
+- Suitable and selected.
+
+### Option 3 — Streamlit with separate prediction API
+
+Description:
+
+Use Streamlit for the UI and a separate API service for prediction.
+
+Advantages:
+
+- can separate frontend and inference processes;
+- may support future deployment scaling.
+
+Disadvantages:
+
+- adds operational complexity;
+- introduces an unapproved service boundary;
+- conflicts with the current limited academic project scope;
+- earlier repository references to API/frontend directories were removed as obsolete.
+
+Suitability:
+
+- Not suitable for the current approved baseline.
+
+### Option 4 — Single-model inference
+
+Description
+
+Use only one exported model as the application's prediction engine, ignoring the complementary model.
+
+#### Advantages
+- Simpler inference pipeline.
+- Smaller implementation surface.
+- Easier result presentation.
+#### Disadvantages
+- Discards evidence obtained during the Machine Learning evaluation phase.
+- Ignores the complementary behavior intentionally preserved in the exported artifacts.
+- Eliminates the ability to expose agreement and disagreement between models.
+- Reduces interpretability by hiding situations where one model is more conservative than the other.
+- Contradicts the approved analytical conclusions documented in the Machine Learning notebook and the project report.
+- Does not satisfy the objectives established for this academic project.
+#### Suitability
+
+**Rejected.**
+
+The project intentionally preserves both exported models because the comparative analysis demonstrated that they provide complementary information.
+
+The Gradient Boosting model acts as the primary predictive model, while the Decision Tree acts as an additional sensitivity indicator. Their joint execution is therefore an intentional design decision derived from the Machine Learning study rather than an implementation convenience.
+
+### Option 5 — Binary OR combination
+
+Description
+
+Combine both model predictions into a single binary churn decision using a logical OR operation.
+
+### Advantages
+- Very simple implementation.
+- Produces a single binary output.
+- Easy for non-technical users to understand.
+### Disadvantages
+- Discards the complementary analytical roles established during model evaluation.
+- Treats every positive prediction identically, regardless of which model produced it.
+- Eliminates the distinction between model agreement and model disagreement.
+- Removes valuable information about uncertainty that is intentionally exposed by executing both models independently.
+- Discards the four-level risk interpretation derived from the Machine Learning analysis.
+- Makes it impossible to distinguish situations where only the complementary sensitivity model detects elevated risk.
+- Reduces the application's interpretability compared with the approved orchestration strategy.
+- Contradicts the analytical conclusions documented in the Machine Learning notebook and the project report.
+
+### Suitability
+
+**Rejected.**
+
+The binary OR strategy was intentionally rejected because the objective of the application is not merely to classify churn, but to preserve and communicate the complementary behavior of the exported models.
+
+The approved four-level orchestration provides additional decision-support information by distinguishing agreement from disagreement between the models, reflecting the conclusions reached during the Machine Learning evaluation.
+
+### Option 6 — Four-Level Decision-Support Orchestration
+
+Description
+
+Execute both exported Machine Learning pipelines independently, preserving each model's prediction and probability, and combine their outputs using the approved four-level decision policy (LOW, ATTENTION, HIGH, CRITICAL).
+
+The orchestration layer is not an ensemble model and does not compute a new prediction. Instead, it interprets the relationship between two independently generated predictions, preserving the analytical behavior observed during the Machine Learning evaluation.
+
+#### Advantages
+- Preserves the complete analytical information produced by both exported models.
+- Maintains the complementary roles established during model evaluation:
+  - **Gradient Boosting** as the primary predictive model.
+  - **Decision Tree** as a complementary sensitivity model.
+- Preserves situations where the models agree and where they disagree.
+- Allows the application to communicate different confidence scenarios instead of collapsing them into a single binary outcome.
+- Provides richer decision support without modifying the trained models.
+- Maintains full traceability between the Machine Learning study, the technical report, and the application behavior.
+- Reflects the conclusions obtained during the comparative evaluation of the models.
+- Keeps inference deterministic, reproducible, and easily testable.
+- Preserves individual model probabilities without creating artificial combined probabilities.
+- Produces a more informative risk interpretation while respecting the academic scope of the project.
+#### Disadvantages
+- Requires an explicit orchestration layer in addition to model inference.
+- Requires careful user guidance to explain the meaning of each risk level.
+- Requires deterministic testing of all four orchestration scenarios.
+- Slightly increases implementation complexity compared with a single-model solution.
+#### Suitability
+
+**Selected.**
+
+The four-level orchestration is the architectural approach adopted for this project because it preserves the complementary analytical behavior identified during the Machine Learning evaluation while remaining fully compatible with the exported artifacts.
+
+Rather than replacing or combining the trained models, the orchestration layer interprets their relationship, allowing the application to distinguish situations of model agreement from situations of model disagreement. This provides a richer and more transparent decision-support process than a traditional binary classifier, while maintaining complete traceability to the analytical conclusions documented throughout the project
+
+```puppet
+Gradient Boosting --------┐
+                          │
+                          ▼
+                 Orchestration Layer
+                          │
+Decision Tree ------------┘
+                          │
+                          ▼
+      LOW / ATTENTION / HIGH / CRITICAL
+```
+
+## Architectural Rationale
+
+The application is intentionally designed as a decision-support system rather than a binary classifier. The orchestration layer exists to preserve the complementary analytical behavior observed during model evaluation, exposing both agreement and disagreement between the exported models instead of collapsing them into a single binary decision.
+
+## Decision
+
+After evaluating the architectural alternatives and considering the conclusions obtained during the Machine Learning phase, the project adopts a modular Streamlit-based decision-support application that preserves the complementary behavior of the two exported Machine Learning models.
+
+The application shall execute both exported pipelines independently without modifying their predictions. Instead of combining or replacing the models, the application introduces an orchestration layer responsible for interpreting the relationship between their outputs and communicating the resulting risk through the approved four-level policy (LOW, ATTENTION, HIGH, CRITICAL).
+
+This architecture was selected because it:
+
+- preserves the analytical conclusions established during the Machine Learning evaluation;
+- maintains the distinct roles of the exported models:
+  - Gradient Boosting as the primary predictive model;
+  - Decision Tree as the complementary sensitivity model;
+- exposes both agreement and disagreement between the models;
+- provides richer decision support than a binary classification;
+- maintains full traceability between the Machine Learning study, the project report, and the application behavior;
+- remains compatible with the academic scope of the project while preserving simplicity, reproducibility, and testability.
+
+The orchestration layer is an application-level architectural component, not a Machine Learning ensemble. It does not generate a new prediction, retrain models, or compute synthetic probabilities. Its sole responsibility is to interpret the outputs produced by the exported models according to the approved decision policy.
+
+## Architectural Constraints
+
+The approved architecture imposes the following constraints:
+
+• The application shall execute locally as a modular in-process Streamlit application.## Component Boundaries
+• Model artifacts shall be loaded only from the repository-controlled artifacts directory.
+• metadata.json is the authoritative runtime metadata contract.Application composition:
+• reference_predictions.csv is the integration validation contract.
+• Model probabilities shall remain model-specific.- `app.py` owns Streamlit page composition and calls package-level services/UI helpers.
+• No synthetic probability shall be computed.
+• Runtime retraining is forbidden.Configuration:
+• The application shall preserve the separation between presentation, validation, inference, orchestration, and artifact management.
+- `src/churn_app/config.py` owns repository paths and application configuration.
+
+## Architectural Components
+
+The application is organized into logical architectural components. These components define responsibilities and dependency boundaries without prescribing a specific physical package structure.
+
+### Presentation Layer
+
+Responsible for:
+
+- collecting user inputs;
+- presenting prediction results;
+- displaying model explanations and recommendations;
+- interacting with the user through the Streamlit interface.
+
+The Presentation Layer must not contain business rules, prediction logic, or decision policy.
+
+---
+
+### Validation Layer
+
+Responsible for:
+
+- validating user inputs;
+- enforcing business validation rules;
+- deriving computed features required for inference;
+- transforming validated inputs into the structure expected by the exported pipelines.
+
+Validation must be deterministic and independent of the user interface.
+
+---
+
+### Artifact Management Layer
+
+Responsible for:
+
+- loading exported Machine Learning artifacts;
+- validating artifact integrity when metadata provides verification information;
+- exposing trained pipelines and metadata to the prediction layer.
+
+Artifacts are treated as immutable runtime resources.
+
+---
+
+### Prediction Layer
+
+Responsible for:
+
+- executing the exported Machine Learning pipelines;
+- preserving each model's predictions independently;
+- exposing model-specific probabilities when available;
+- normalizing prediction outputs into a common domain representation.
+
+This layer performs inference only and must not implement business decision rules.
+
+---
+
+### Orchestration Layer
+
+Responsible for:
+
+- interpreting the relationship between both model predictions;
+- applying the approved four-level decision policy;
+- preserving model agreement and disagreement;
+- producing the consolidated decision-support result.
+
+The orchestration layer is an application-level architectural component. It is **not** an ensemble model and does not generate new predictions or synthetic probabilities.
+
+---
+
+### Domain Layer
+
+Responsible for representing the core business concepts exchanged between architectural components, including:
+
+- customer information;
+- prediction results;
+- risk levels;
+- decision-support outcomes.
+
+Domain objects remain independent of the user interface and Machine Learning implementation details.
+
+---
+
+## Architectural Dependencies
+
+The approved dependency flow is:
+
+```text
+Presentation
+      │
+      ▼
+Validation
+      │
+      ▼
+Prediction
+ ┌────┴────┐
+ ▼         ▼
+Artifact  Domain
+Management
+      │
+      ▼
+Orchestration
+      │
+      ▼
+Presentation
+```
+
+Dependency principles:
+
+- Dependencies flow only downward.
+- Business rules must not depend on the user interface.
+- The Presentation Layer must never access Machine Learning artifacts directly.
+- The Orchestration Layer consumes prediction results but never executes models.
+- Domain objects remain independent from infrastructure concerns.
+
+---
+
+## Architectural Data Flow
+
+The application follows the logical processing pipeline below:
+
+```text
+User Input
+      │
+      ▼
+Input Validation
+      │
+      ▼
+Feature Derivation
+      │
+      ▼
+Machine Learning Inference
+      │
+      ▼
+Prediction Normalization
+      │
+      ▼
+Four-Level Orchestration
+      │
+      ▼
+Risk Interpretation
+      │
+      ▼
+User Recommendation
+```
+
+Processing stages:
+
+1. The user provides customer information through the application interface.
+2. Inputs are validated according to business and data constraints.
+3. Derived features required by the exported pipelines are generated internally.
+4. Both exported Machine Learning pipelines execute independently.
+5. Individual predictions and probabilities are normalized into a common representation.
+6. The orchestration layer interprets the relationship between the model outputs.
+7. The approved four-level decision policy determines the final risk level.
+8. The application presents both individual model outputs and the consolidated decision-support interpretation.
+
+---
+
+## Architectural Consequences
+
+### Positive Consequences
+
+- Preserves the analytical conclusions obtained during the Machine Learning evaluation.
+- Maintains complete traceability between training and inference.
+- Preserves agreement and disagreement between the exported models.
+- Separates business decisions from user interface concerns.
+- Improves maintainability through clear responsibility boundaries.
+- Enables deterministic testing of architectural components.
+- Avoids artificial probability aggregation.
+
+### Negative Consequences
+
+- Introduces additional architectural components compared with a monolithic application.
+- Requires explicit coordination between validation, inference, and orchestration.
+- Requires careful communication of risk levels to avoid deterministic interpretation.
+
+---
+
+## Operational Consequences
+
+- Machine Learning artifacts remain local and immutable.
+- Runtime retraining is not permitted.
+- Remote model loading is not permitted.
+- Inference executes within the same application process.
+- Artifact caching may be used to improve application performance.
+
+---
+
+## Testing Consequences
+
+The implementation shall demonstrate objective evidence that:
+
+- both exported pipelines execute successfully;
+- orchestration correctly handles all approved decision-policy scenarios;
+- derived features are generated consistently with the training process;
+- prediction inputs preserve the approved feature schema;
+- artifact integrity validation operates correctly when metadata provides verification hashes;
+- the application reproduces the approved reference predictions within the accepted tolerance.
+
+Implementation-specific test organization, tooling, and CI requirements are intentionally documented outside this ADR.
