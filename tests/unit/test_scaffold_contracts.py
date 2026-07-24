@@ -7,6 +7,7 @@ import importlib
 from churn_app import config, domain
 from churn_app.domain import (
     CustomerInput,
+    InterpretationResult,
     ModelIdentity,
     ModelPrediction,
     ModelRole,
@@ -86,6 +87,25 @@ def test_model_predictions_preserve_independent_probabilities() -> None:
     assert not hasattr(result, "confidence_score")
 
 
+def test_interpretation_result_separates_evidence_and_rationale() -> None:
+    interpretation = InterpretationResult(
+        risk_level=RiskLevel.HIGH,
+        title="High Churn Risk",
+        summary="Summary",
+        model_agreement="Only the primary model predicted churn.",
+        evidence=("Gradient Boosting predicted churn.",),
+        rationale=("This disagreement corresponds to high churn risk.",),
+    )
+
+    assert interpretation.evidence == ("Gradient Boosting predicted churn.",)
+    assert interpretation.rationale == (
+        "This disagreement corresponds to high churn risk.",
+    )
+    assert not hasattr(interpretation, "recommendation")
+    assert not hasattr(interpretation, "color")
+    assert not hasattr(interpretation, "icon")
+
+
 def test_domain_does_not_export_premature_orchestration_result() -> None:
     assert "OrchestrationResult" not in domain.__all__
     assert not hasattr(domain, "OrchestrationResult")
@@ -99,6 +119,7 @@ def test_boundary_modules_import_without_loading_artifacts() -> None:
         "churn_app.services.artifact_loader",
         "churn_app.services.input_builder",
         "churn_app.services.prediction_service",
+        "churn_app.services.risk_interpreter",
         "churn_app.services.decision_policy",
         "churn_app.ui.form",
         "churn_app.ui.result",

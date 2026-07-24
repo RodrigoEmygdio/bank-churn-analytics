@@ -13,6 +13,7 @@ from behavior intentionally deferred to later implementation stages.
 | Input construction           | `src/churn_app/services/input_builder.py`      | Implemented   | Validates `CustomerInput`, derives `ProductsGroup`, and builds one-row pandas DataFrames in metadata schema order                              |
 | Prediction                   | `src/churn_app/services/prediction_service.py` | Implemented   | Executes both loaded pipelines independently, extracts model-specific probabilities when available, and returns immutable prediction contracts |
 | Decision Policy              | `src/churn_app/services/decision_policy.py`    | Implemented   | Pure infrastructure-independent mapping from four predicted-class combinations to `RiskLevel`; probabilities are not used                      |
+| Risk Interpreter             | `src/churn_app/services/risk_interpreter.py`   | Implemented   | Pure infrastructure-independent explanation of a supplied `PredictionResult` and `RiskLevel`; validates consistency without recalculating risk |
 | Presentation                 | `src/churn_app/ui/`                            | Contract only | Final form, result rendering, recommendations, and disclaimer deferred                                                                         |
 | Test structure               | `tests/`                                       | Implemented   | Unit, integration, artifact-contract, and architectural-boundary tests cover implemented behavior                                              |
 
@@ -40,7 +41,6 @@ Domain
 
 - complete Streamlit UI;
 - final customer form;
-- model-disagreement interpretation;
 - operational recommendations;
 - final disclaimer text;
 - reference prediction reproduction;
