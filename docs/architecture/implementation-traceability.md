@@ -15,7 +15,8 @@ from behavior intentionally deferred to later implementation stages.
 | Decision Policy              | `src/churn_app/services/decision_policy.py`    | Implemented   | Pure infrastructure-independent mapping from four predicted-class combinations to `RiskLevel`; probabilities are not used                      |
 | Risk Interpreter             | `src/churn_app/services/risk_interpreter.py`   | Implemented   | Pure infrastructure-independent explanation of a supplied `PredictionResult` and `RiskLevel`; validates consistency without recalculating risk |
 | Recommendation Engine        | `src/churn_app/services/recommendation_engine.py` | Implemented | Pure business-domain mapping from interpreted `RiskLevel` to immutable recommendation contracts; presentation remains deferred |
-| Presentation                 | `src/churn_app/ui/`                            | Contract only | Final form, result rendering, recommendations, and disclaimer deferred                                                                         |
+| Presentation Layer           | `src/churn_app/services/presentation_layer.py` | Implemented   | Pure contract composition from interpretation and recommendation results into immutable `PresentationResult`; Streamlit UI remains deferred |
+| Streamlit UI                 | `src/churn_app/ui/`                            | Contract only | Final form rendering, result rendering, visual presentation, and disclaimer deferred                                                           |
 | Test structure               | `tests/`                                       | Implemented   | Unit, integration, artifact-contract, and architectural-boundary tests cover implemented behavior                                              |
 
 ## Dependency Direction

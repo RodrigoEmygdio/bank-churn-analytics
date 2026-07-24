@@ -13,6 +13,7 @@ from churn_app.domain import (
     ModelRole,
     ModelType,
     PredictionResult,
+    PresentationResult,
     RecommendationPriority,
     RecommendationResult,
     RiskLevel,
@@ -125,6 +126,28 @@ def test_recommendation_result_is_presentation_neutral() -> None:
     assert not hasattr(recommendation, "icon")
 
 
+def test_presentation_result_aggregates_business_outputs_without_formatting() -> None:
+    presentation = PresentationResult(
+        risk_level=RiskLevel.HIGH,
+        title="High Churn Risk",
+        summary="Summary",
+        model_agreement="Only the primary model predicted churn.",
+        evidence=("Gradient Boosting predicted churn.",),
+        rationale=("This disagreement corresponds to high churn risk.",),
+        recommendation_priority=RecommendationPriority.HIGH,
+        objective="Reduce customer churn risk through proactive engagement.",
+        recommendations=("Contact the customer.",),
+        expected_outcome="Customer retention opportunities are identified before churn occurs.",
+    )
+
+    assert presentation.recommendation_priority is RecommendationPriority.HIGH
+    assert presentation.recommendations == ("Contact the customer.",)
+    assert not hasattr(presentation, "html")
+    assert not hasattr(presentation, "markdown")
+    assert not hasattr(presentation, "color")
+    assert not hasattr(presentation, "icon")
+
+
 def test_domain_does_not_export_premature_orchestration_result() -> None:
     assert "OrchestrationResult" not in domain.__all__
     assert not hasattr(domain, "OrchestrationResult")
@@ -140,6 +163,7 @@ def test_boundary_modules_import_without_loading_artifacts() -> None:
         "churn_app.services.prediction_service",
         "churn_app.services.risk_interpreter",
         "churn_app.services.recommendation_engine",
+        "churn_app.services.presentation_layer",
         "churn_app.services.decision_policy",
         "churn_app.ui.form",
         "churn_app.ui.result",

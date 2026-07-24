@@ -198,3 +198,30 @@ rationale.
 
 The recommendation contract must not contain presentation formatting, icons,
 colors, HTML, Markdown, generated text, or customer-message content.
+
+## Presentation Contract
+
+The Presentation Layer consumes an `InterpretationResult` and a
+`RecommendationResult` and returns a single immutable `PresentationResult`.
+
+The layer performs composition only. It must not predict, classify, interpret,
+recommend, rewrite text, concatenate content, format output, or render UI.
+
+| Source | Destination |
+|---|---|
+| `InterpretationResult.risk_level` | `PresentationResult.risk_level` |
+| `InterpretationResult.title` | `PresentationResult.title` |
+| `InterpretationResult.summary` | `PresentationResult.summary` |
+| `InterpretationResult.model_agreement` | `PresentationResult.model_agreement` |
+| `InterpretationResult.evidence` | `PresentationResult.evidence` |
+| `InterpretationResult.rationale` | `PresentationResult.rationale` |
+| `RecommendationResult.priority` | `PresentationResult.recommendation_priority` |
+| `RecommendationResult.objective` | `PresentationResult.objective` |
+| `RecommendationResult.recommendations` | `PresentationResult.recommendations` |
+| `RecommendationResult.expected_outcome` | `PresentationResult.expected_outcome` |
+
+The interpretation and recommendation risk levels must match. A mismatch is a
+contract error and must not be corrected silently.
+
+`PresentationResult` must not contain HTML, Markdown, colors, icons, CSS
+classes, Streamlit objects, charts, exports, or customer-message formatting.

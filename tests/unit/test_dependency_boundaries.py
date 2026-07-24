@@ -113,6 +113,22 @@ def test_recommendation_engine_imports_no_forbidden_runtime_boundaries() -> None
     assert "churn_app.ui" not in imported_modules
 
 
+def test_presentation_layer_imports_no_forbidden_runtime_boundaries() -> None:
+    path = Path("src/churn_app/services/presentation_layer.py")
+    imported_modules = _imported_modules(path)
+
+    assert _imported_roots(path).isdisjoint(
+        {"streamlit", "pandas", "sklearn", "joblib", "numpy"}
+    )
+    assert "churn_app.services.artifact_loader" not in imported_modules
+    assert "churn_app.services.input_builder" not in imported_modules
+    assert "churn_app.services.prediction_service" not in imported_modules
+    assert "churn_app.services.decision_policy" not in imported_modules
+    assert "churn_app.services.risk_interpreter" not in imported_modules
+    assert "churn_app.services.recommendation_engine" not in imported_modules
+    assert "churn_app.ui" not in imported_modules
+
+
 def _imported_roots(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
     imported_roots: set[str] = set()
