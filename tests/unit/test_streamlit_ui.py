@@ -12,6 +12,7 @@ import churn_app.ui.form as form_module
 import churn_app.ui.result as result_module
 from churn_app.domain import (
     CustomerInput,
+    ModelPresentationResult,
     PresentationResult,
     RecommendationPriority,
     RiskLevel,
@@ -44,9 +45,9 @@ def test_customer_form_returns_customer_input_when_submitted(
     assert fake_streamlit.number_labels == [
         "Credit Score",
         "Age",
-        "Tenure",
         "Balance",
         "Estimated Salary",
+        "Tenure",
     ]
     assert fake_streamlit.select_labels == [
         "Geography",
@@ -54,6 +55,7 @@ def test_customer_form_returns_customer_input_when_submitted(
         "Number of Products",
     ]
     assert fake_streamlit.checkbox_labels == ["Credit Card", "Active Member"]
+    assert fake_streamlit.column_calls == [(2,), (2,), (2,), (2,), (2,)]
 
 
 def test_customer_form_returns_none_before_submit(
@@ -73,26 +75,50 @@ def test_render_result_displays_every_presentation_field(
 
     result_module.render_result(presentation)
 
-    rendered_values = [value for _, value in fake_streamlit.calls]
+    rendered_values = [call[1] for call in fake_streamlit.calls]
     assert presentation.title in rendered_values
     assert presentation.summary in rendered_values
+    assert "Analysis Result" in rendered_values
     assert "Risk Level" in rendered_values
     assert presentation.risk_level.value in rendered_values
+    assert f"Risk Level: {presentation.risk_level.value}" in rendered_values
     assert "Model Agreement" in rendered_values
     assert presentation.model_agreement in rendered_values
-    assert "Evidence" in rendered_values
-    assert "Business Rationale" in rendered_values
-    assert "Recommendation Priority" in rendered_values
+    assert "Model Predictions" in rendered_values
+    assert presentation.gradient_boosting.display_name in rendered_values
+    assert presentation.decision_tree.display_name in rendered_values
+    assert presentation.gradient_boosting.predicted_label in rendered_values
+    assert presentation.decision_tree.predicted_label in rendered_values
+    assert "Class: 1" in rendered_values
+    assert "Class: 0" in rendered_values
+    assert "Churn probability: 61.7%" in rendered_values
+    assert "Churn probability: Probability unavailable" in rendered_values
+    assert rendered_values.count("Recommendation Priority") == 1
     assert presentation.recommendation_priority.value in rendered_values
     assert "Objective" in rendered_values
     assert presentation.objective in rendered_values
-    assert "Recommendations" in rendered_values
+    assert "Recommended Actions" in rendered_values
+    assert "Evidence" in rendered_values
+    assert "Business Rationale" in rendered_values
     assert "Expected Outcome" in rendered_values
     assert presentation.expected_outcome in rendered_values
-    for item in (
-        presentation.evidence + presentation.rationale + presentation.recommendations
-    ):
-        assert f"- {item}" in rendered_values
+    assert (
+        "\n".join(f"- {item}" for item in presentation.recommendations)
+        in rendered_values
+    )
+    assert "\n".join(f"- {item}" for item in presentation.evidence) in rendered_values
+    assert "\n".join(f"- {item}" for item in presentation.rationale) in rendered_values
+    for item in presentation.recommendations:
+        assert _rendered_item_count(fake_streamlit.calls, item) == 1
+    for item in presentation.evidence:
+        assert _rendered_item_count(fake_streamlit.calls, item) == 1
+    for item in presentation.rationale:
+        assert _rendered_item_count(fake_streamlit.calls, item) == 1
+    assert ("progress", 62) in fake_streamlit.calls
+    assert fake_streamlit.expanders == [
+        ("Analysis Details", False),
+        ("How this analysis is produced", False),
+    ]
 
 
 def test_run_pipeline_invokes_approved_services_in_order(
@@ -148,10 +174,12 @@ def test_run_pipeline_invokes_approved_services_in_order(
         return recommendation
 
     def build_presentation(
+        received_prediction: object,
         received_interpretation: object,
         received_recommendation: object,
     ) -> PresentationResult:
         calls.append("build_presentation")
+        assert received_prediction is prediction_result
         assert received_interpretation is interpretation
         assert received_recommendation is recommendation
         return presentation
@@ -192,10 +220,33 @@ def test_main_renders_pipeline_result(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert fake_streamlit.page_config == {
         "page_title": "Bank Churn Risk Analysis",
-        "layout": "centered",
+        "layout": "wide",
     }
+    assert fake_streamlit.column_calls == [([0.9, 1.1], "large")]
     assert fake_streamlit.rendered_result is presentation
+    assert fake_streamlit.render_result_calls == 1
     assert fake_streamlit.errors == []
+    assert fake_streamlit.successes == ["Analysis completed."]
+
+
+def test_main_renders_placeholder_before_analysis(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_streamlit = _FakeAppStreamlit()
+    monkeypatch.setattr(app, "st", fake_streamlit)
+    monkeypatch.setattr(app, "render_customer_form", lambda: None)
+
+    def fail_if_called(customer: CustomerInput) -> PresentationResult:
+        raise AssertionError("pipeline must not run before submit")
+
+    monkeypatch.setattr(app, "run_pipeline", fail_if_called)
+
+    app.main()
+
+    assert fake_streamlit.infos == [
+        "Complete the customer form and select Analyze Customer to generate the churn risk analysis."
+    ]
+    assert fake_streamlit.rendered_result is None
 
 
 def test_main_renders_service_error_without_traceback(
@@ -275,10 +326,17 @@ class _FakeFormStreamlit:
         self.number_labels: list[str] = []
         self.select_labels: list[str] = []
         self.checkbox_labels: list[str] = []
+        self.column_calls: list[tuple[object, ...]] = []
 
     def form(self, key: str) -> _FormContext:
         self.form_key = key
         return _FormContext()
+
+    def columns(self, spec: object, **kwargs: object) -> tuple[_FormContext, ...]:
+        self.column_calls.append((spec,))
+        if isinstance(spec, int):
+            return tuple(_FormContext() for _ in range(spec))
+        return tuple(_FormContext() for _ in spec)  # type: ignore[arg-type]
 
     def number_input(self, label: str, **kwargs: object) -> int | float:
         self.number_labels.append(label)
@@ -304,14 +362,14 @@ class _FakeFormStreamlit:
         self.checkbox_labels.append(label)
         return label == "Credit Card"
 
-    def form_submit_button(self, label: str) -> bool:
+    def form_submit_button(self, label: str, **kwargs: object) -> bool:
         self.button_labels.append(label)
         return self.submitted
 
 
 class _FakeRenderStreamlit:
     def __init__(self) -> None:
-        self.calls: list[tuple[str, str]] = []
+        self.calls: list[tuple[object, ...]] = []
 
     def header(self, value: str) -> None:
         self.calls.append(("header", value))
@@ -325,6 +383,44 @@ class _FakeRenderStreamlit:
     def markdown(self, value: str) -> None:
         self.calls.append(("markdown", value))
 
+    def success(self, value: str) -> None:
+        self.calls.append(("success", value))
+
+    def info(self, value: str) -> None:
+        self.calls.append(("info", value))
+
+    def warning(self, value: str) -> None:
+        self.calls.append(("warning", value))
+
+    def error(self, value: str) -> None:
+        self.calls.append(("error", value))
+
+    def caption(self, value: str) -> None:
+        self.calls.append(("caption", value))
+
+    def metric(self, label: str, value: str) -> None:
+        self.calls.append(("metric", label))
+        self.calls.append(("metric", value))
+
+    def progress(self, value: int) -> None:
+        self.calls.append(("progress", value))
+
+    def columns(self, spec: object, **kwargs: object) -> tuple[_FormContext, ...]:
+        if isinstance(spec, int):
+            return tuple(_FormContext() for _ in range(spec))
+        return tuple(_FormContext() for _ in spec)  # type: ignore[arg-type]
+
+    def container(self, **kwargs: object) -> _FormContext:
+        return _FormContext()
+
+    @property
+    def expanders(self) -> list[tuple[str, bool]]:
+        return [(call[1], call[2]) for call in self.calls if call[0] == "expander"]
+
+    def expander(self, label: str, *, expanded: bool = False) -> _FormContext:
+        self.calls.append(("expander", label, expanded))
+        return _FormContext()
+
 
 class _FakeAppStreamlit:
     def __init__(self) -> None:
@@ -332,7 +428,11 @@ class _FakeAppStreamlit:
         self.titles: list[str] = []
         self.writes: list[str] = []
         self.errors: list[str] = []
+        self.infos: list[str] = []
+        self.successes: list[str] = []
+        self.column_calls: list[tuple[object, object]] = []
         self.rendered_result: PresentationResult | None = None
+        self.render_result_calls = 0
 
     def set_page_config(self, **kwargs: object) -> None:
         self.page_config = kwargs
@@ -346,7 +446,20 @@ class _FakeAppStreamlit:
     def error(self, value: str) -> None:
         self.errors.append(value)
 
+    def info(self, value: str) -> None:
+        self.infos.append(value)
+
+    def success(self, value: str) -> None:
+        self.successes.append(value)
+
+    def columns(self, spec: object, **kwargs: object) -> tuple[_FormContext, ...]:
+        self.column_calls.append((spec, kwargs.get("gap")))
+        if isinstance(spec, int):
+            return tuple(_FormContext() for _ in range(spec))
+        return tuple(_FormContext() for _ in spec)  # type: ignore[arg-type]
+
     def render_result(self, result: PresentationResult) -> None:
+        self.render_result_calls += 1
         self.rendered_result = result
 
 
@@ -375,6 +488,18 @@ def _presentation_result() -> PresentationResult:
         risk_level=RiskLevel.HIGH,
         title="High Churn Risk",
         summary="The primary prediction model detected evidence associated with customer churn.",
+        gradient_boosting=ModelPresentationResult(
+            display_name="Gradient Boosting",
+            predicted_class=1,
+            predicted_label="Churn",
+            churn_probability=0.617,
+        ),
+        decision_tree=ModelPresentationResult(
+            display_name="Decision Tree",
+            predicted_class=0,
+            predicted_label="Retention",
+            churn_probability=None,
+        ),
         model_agreement="Only the primary model predicted churn.",
         evidence=(
             "Gradient Boosting predicted churn.",
@@ -393,4 +518,12 @@ def _presentation_result() -> PresentationResult:
             "Evaluate appropriate retention actions.",
         ),
         expected_outcome="Customer retention opportunities are identified before churn occurs.",
+    )
+
+
+def _rendered_item_count(calls: list[tuple[object, ...]], item: str) -> int:
+    return sum(
+        str(value).splitlines().count(f"- {item}")
+        for _, value, *extra in calls
+        if not extra and isinstance(value, str)
     )

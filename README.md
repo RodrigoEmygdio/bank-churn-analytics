@@ -21,6 +21,7 @@ decisao automatica ou deterministica sobre clientes reais.
 - Validacao deterministica dos dados informados.
 - Derivacao interna da feature `ProductsGroup`.
 - Execucao independente dos pipelines Gradient Boosting e Decision Tree.
+- Exibicao das probabilidades individuais dos modelos quando disponiveis.
 - Politica de risco em quatro niveis: `LOW`, `MODERATE`, `HIGH`, `CRITICAL`.
 - Interpretacao deterministica do nivel de risco e da concordancia entre os
   modelos.

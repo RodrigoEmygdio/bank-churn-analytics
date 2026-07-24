@@ -38,43 +38,52 @@ def run_pipeline(customer: CustomerInput) -> PresentationResult:
     risk_level = determine_risk_level(prediction_result)
     interpretation = interpret_risk(prediction_result, risk_level)
     recommendation = generate_recommendation(interpretation)
-    return build_presentation(interpretation, recommendation)
+    return build_presentation(prediction_result, interpretation, recommendation)
 
 
 def main() -> None:
     """Render the Streamlit interface and delegate submitted data to services."""
     st.set_page_config(
         page_title="Bank Churn Risk Analysis",
-        layout="centered",
+        layout="wide",
     )
     st.title("Bank Churn Risk Analysis")
     st.write(
         "Academic decision-support interface for analyzing bank customer churn risk."
     )
 
-    customer = render_customer_form()
-    if customer is None:
-        return
+    form_column, result_column = st.columns([0.9, 1.1], gap="large")
+    with form_column:
+        customer = render_customer_form()
 
-    try:
-        presentation = run_pipeline(customer)
-        render_result(presentation)
-    except InputValidationError:
-        st.error("Invalid customer input. Review the form values and try again.")
-    except ArtifactError:
-        st.error("Model artifacts are unavailable or failed integrity validation.")
-    except PredictionError:
-        st.error("The prediction service could not produce a valid model result.")
-    except DecisionPolicyError:
-        st.error("The risk decision policy could not process the model outputs.")
-    except RiskInterpreterError:
-        st.error("The risk interpretation could not be generated.")
-    except RecommendationEngineError:
-        st.error("The business recommendation could not be generated.")
-    except PresentationLayerError:
-        st.error("The presentation result could not be composed.")
-    except Exception:  # noqa: BLE001 - UI boundary must hide unexpected tracebacks.
-        st.error("Unexpected internal error.")
+    with result_column:
+        if customer is None:
+            st.info(
+                "Complete the customer form and select Analyze Customer to "
+                "generate the churn risk analysis."
+            )
+            return
+
+        try:
+            presentation = run_pipeline(customer)
+            st.success("Analysis completed.")
+            render_result(presentation)
+        except InputValidationError:
+            st.error("Invalid customer input. Review the form values and try again.")
+        except ArtifactError:
+            st.error("Model artifacts are unavailable or failed integrity validation.")
+        except PredictionError:
+            st.error("The prediction service could not produce a valid model result.")
+        except DecisionPolicyError:
+            st.error("The risk decision policy could not process the model outputs.")
+        except RiskInterpreterError:
+            st.error("The risk interpretation could not be generated.")
+        except RecommendationEngineError:
+            st.error("The business recommendation could not be generated.")
+        except PresentationLayerError:
+            st.error("The presentation result could not be composed.")
+        except Exception:  # noqa: BLE001 - UI boundary must hide unexpected tracebacks.
+            st.error("Unexpected internal error.")
 
 
 if __name__ == "__main__":

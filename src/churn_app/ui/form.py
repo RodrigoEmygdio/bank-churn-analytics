@@ -18,21 +18,44 @@ PRODUCT_COUNTS = (1, 2, 3, 4)
 def render_customer_form() -> CustomerInput | None:
     """Render the customer form and return submitted user input."""
     with st.form("customer-analysis-form"):
-        credit_score = st.number_input("Credit Score", value=650, step=1)
-        geography = st.selectbox("Geography", GEOGRAPHIES)
-        gender = st.selectbox("Gender", GENDERS)
-        age = st.number_input("Age", value=40, step=1)
-        tenure = st.number_input("Tenure", value=0, step=1)
-        balance = st.number_input("Balance", value=0.0, step=100.0)
-        num_of_products = st.selectbox("Number of Products", PRODUCT_COUNTS)
-        has_cr_card = st.checkbox("Credit Card")
-        is_active_member = st.checkbox("Active Member")
-        estimated_salary = st.number_input(
-            "Estimated Salary",
-            value=0.0,
-            step=100.0,
+        left, right = st.columns(2)
+        with left:
+            credit_score = st.number_input("Credit Score", value=650, step=1)
+        with right:
+            age = st.number_input("Age", value=40, step=1)
+
+        left, right = st.columns(2)
+        with left:
+            geography = st.selectbox("Geography", GEOGRAPHIES)
+        with right:
+            gender = st.selectbox("Gender", GENDERS)
+
+        left, right = st.columns(2)
+        with left:
+            balance = st.number_input("Balance", value=0.0, step=100.0)
+        with right:
+            estimated_salary = st.number_input(
+                "Estimated Salary",
+                value=0.0,
+                step=100.0,
+            )
+
+        left, right = st.columns(2)
+        with left:
+            tenure = st.number_input("Tenure", value=0, step=1)
+        with right:
+            num_of_products = st.selectbox("Number of Products", PRODUCT_COUNTS)
+
+        left, right = st.columns(2)
+        with left:
+            has_cr_card = st.checkbox("Credit Card")
+        with right:
+            is_active_member = st.checkbox("Active Member")
+
+        submitted = st.form_submit_button(
+            "Analyze Customer",
+            use_container_width=True,
         )
-        submitted = st.form_submit_button("Analyze Customer")
 
     if not submitted:
         return None

@@ -10,6 +10,7 @@ from churn_app.domain import (
     InterpretationResult,
     ModelIdentity,
     ModelPrediction,
+    ModelPresentationResult,
     ModelRole,
     ModelType,
     PredictionResult,
@@ -131,6 +132,18 @@ def test_presentation_result_aggregates_business_outputs_without_formatting() ->
         risk_level=RiskLevel.HIGH,
         title="High Churn Risk",
         summary="Summary",
+        gradient_boosting=ModelPresentationResult(
+            display_name="Gradient Boosting",
+            predicted_class=1,
+            predicted_label="Churn",
+            churn_probability=0.6,
+        ),
+        decision_tree=ModelPresentationResult(
+            display_name="Decision Tree",
+            predicted_class=0,
+            predicted_label="Retention",
+            churn_probability=None,
+        ),
         model_agreement="Only the primary model predicted churn.",
         evidence=("Gradient Boosting predicted churn.",),
         rationale=("This disagreement corresponds to high churn risk.",),
@@ -141,6 +154,8 @@ def test_presentation_result_aggregates_business_outputs_without_formatting() ->
     )
 
     assert presentation.recommendation_priority is RecommendationPriority.HIGH
+    assert presentation.gradient_boosting.predicted_label == "Churn"
+    assert presentation.decision_tree.churn_probability is None
     assert presentation.recommendations == ("Contact the customer.",)
     assert not hasattr(presentation, "html")
     assert not hasattr(presentation, "markdown")

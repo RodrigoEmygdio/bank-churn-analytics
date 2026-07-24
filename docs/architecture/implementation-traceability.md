@@ -15,8 +15,8 @@ from behavior intentionally deferred to later implementation stages.
 | Decision Policy              | `src/churn_app/services/decision_policy.py`    | Implemented   | Pure infrastructure-independent mapping from four predicted-class combinations to `RiskLevel`; probabilities are not used                      |
 | Risk Interpreter             | `src/churn_app/services/risk_interpreter.py`   | Implemented   | Pure infrastructure-independent explanation of a supplied `PredictionResult` and `RiskLevel`; validates consistency without recalculating risk |
 | Recommendation Engine        | `src/churn_app/services/recommendation_engine.py` | Implemented | Pure business-domain mapping from interpreted `RiskLevel` to immutable recommendation contracts; presentation remains deferred |
-| Presentation Layer           | `src/churn_app/services/presentation_layer.py` | Implemented   | Pure contract composition from interpretation and recommendation results into immutable `PresentationResult`                                  |
-| Streamlit UI                 | `src/churn_app/ui/`                            | Implemented   | Native Streamlit form and result rendering; delegates validation, inference, policy, interpretation, recommendation, and composition to services |
+| Presentation Layer           | `src/churn_app/services/presentation_layer.py` | Implemented   | Pure contract composition from prediction, interpretation, and recommendation results into immutable `PresentationResult`; includes independent model presentation evidence |
+| Streamlit UI                 | `src/churn_app/ui/`                            | Implemented   | Native wide two-panel layout with compact form, result panel, model probability presentation, collapsible analytical details, and native visual risk treatment |
 | Test structure               | `tests/`                                       | Implemented   | Unit, integration, artifact-contract, and architectural-boundary tests cover implemented behavior                                              |
 
 ## Dependency Direction
@@ -43,7 +43,7 @@ Domain
 
 - final disclaimer text;
 - reference prediction reproduction;
-- runtime caching.
+- runtime caching;
 - deployment;
 - authentication.
 

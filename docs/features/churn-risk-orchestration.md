@@ -34,6 +34,22 @@ combine probabilities.
 The policy must not execute models, load artifacts, construct features,
 interpret results, generate recommendations, or render presentation output.
 
+## Presentation Model Evidence
+
+`PresentationResult` may include presentation-neutral model outputs for the
+Gradient Boosting and Decision Tree predictions.
+
+For each model, the presentation contract may expose:
+
+- model display name;
+- predicted class;
+- predicted label using `0 -> Retention` and `1 -> Churn`;
+- model-specific positive churn-class probability when available.
+
+Probabilities are supporting model evidence only. They do not affect
+`RiskLevel`, are not averaged, are not combined, and do not produce an ensemble
+confidence score.
+
 ## Risk Interpretation
 
 The Risk Interpreter consumes a completed `PredictionResult` and the already
