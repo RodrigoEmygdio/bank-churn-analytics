@@ -6,7 +6,7 @@ from behavior intentionally deferred to later implementation stages.
 
 | Architectural Responsibility | Physical Artifact                              | Current Stage | Notes                                                                                                                                          |
 |------------------------------|------------------------------------------------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| Application composition      | `app.py`                                       | Scaffolded    | Neutral Streamlit entry point only; no business behavior implemented                                                                           |
+| Application composition      | `app.py`                                       | Implemented   | Streamlit entry point delegates submitted customer data through the approved service pipeline without business-rule implementation             |
 | Configuration                | `src/churn_app/config.py`                      | Scaffolded    | Repository-controlled paths only; no artifact loading                                                                                          |
 | Domain representation        | `src/churn_app/domain/`                        | Implemented   | Immutable infrastructure-independent contracts for customer input, model identity, independent predictions, and risk levels                    |
 | Artifact management          | `src/churn_app/services/artifact_loader.py`    | Implemented   | Metadata parsing, repository validation, hash verification, joblib loading, and deterministic artifact exceptions                              |
@@ -15,8 +15,8 @@ from behavior intentionally deferred to later implementation stages.
 | Decision Policy              | `src/churn_app/services/decision_policy.py`    | Implemented   | Pure infrastructure-independent mapping from four predicted-class combinations to `RiskLevel`; probabilities are not used                      |
 | Risk Interpreter             | `src/churn_app/services/risk_interpreter.py`   | Implemented   | Pure infrastructure-independent explanation of a supplied `PredictionResult` and `RiskLevel`; validates consistency without recalculating risk |
 | Recommendation Engine        | `src/churn_app/services/recommendation_engine.py` | Implemented | Pure business-domain mapping from interpreted `RiskLevel` to immutable recommendation contracts; presentation remains deferred |
-| Presentation Layer           | `src/churn_app/services/presentation_layer.py` | Implemented   | Pure contract composition from interpretation and recommendation results into immutable `PresentationResult`; Streamlit UI remains deferred |
-| Streamlit UI                 | `src/churn_app/ui/`                            | Contract only | Final form rendering, result rendering, visual presentation, and disclaimer deferred                                                           |
+| Presentation Layer           | `src/churn_app/services/presentation_layer.py` | Implemented   | Pure contract composition from interpretation and recommendation results into immutable `PresentationResult`                                  |
+| Streamlit UI                 | `src/churn_app/ui/`                            | Implemented   | Native Streamlit form and result rendering; delegates validation, inference, policy, interpretation, recommendation, and composition to services |
 | Test structure               | `tests/`                                       | Implemented   | Unit, integration, artifact-contract, and architectural-boundary tests cover implemented behavior                                              |
 
 ## Dependency Direction
@@ -41,11 +41,11 @@ Domain
 
 ## Deferred Behavior
 
-- complete Streamlit UI;
-- final customer form;
 - final disclaimer text;
 - reference prediction reproduction;
 - runtime caching.
+- deployment;
+- authentication.
 
 ## Input Construction Evidence
 
