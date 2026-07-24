@@ -193,7 +193,8 @@ The feature must not replace the approved policy with:
 - an invented combined probability.
 
 Any policy change requires explicit human approval and corresponding updates to
-requirements, feature specification, metadata, code, tests, and traceability.
+requirements, feature specification, metadata, code, tests, and architecture
+documentation.
 
 ## 13. Probability Handling
 

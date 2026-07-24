@@ -18,7 +18,6 @@ Examples:
 
 - ADRs
 - Architecture documents
-- Implementation Traceability
 
 ---
 

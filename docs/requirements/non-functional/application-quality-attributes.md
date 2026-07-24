@@ -224,8 +224,8 @@ A failed or unavailable command must be reported honestly.
 Feature rules derived from notebooks, reports, exports, or human decisions must
 be traceable to their evidence.
 
-Architecture implementation must remain linked to accepted ADRs and
-implementation traceability.
+Architecture implementation must remain linked to accepted ADRs and maintained
+architecture documentation.
 
 ## 15. Quality Acceptance Criteria
 

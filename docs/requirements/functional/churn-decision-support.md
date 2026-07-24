@@ -6,7 +6,7 @@ This document defines what the bank-customer churn decision-support application
 must do.
 
 Implementation details, architectural boundaries, and quality attributes are
-defined separately in ADRs, implementation traceability, and non-functional
+defined separately in ADRs, architecture documents, and non-functional
 requirements.
 
 ## 2. Scope

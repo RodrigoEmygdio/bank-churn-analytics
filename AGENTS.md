@@ -40,7 +40,7 @@ Use this precedence:
 2. applicable accepted ADRs;
 3. applicable feature specifications;
 4. applicable functional and non-functional requirements;
-5. implementation traceability;
+5. architecture documentation;
 6. operational metadata and repository-controlled artifacts;
 7. existing code and tests;
 8. this file as an agent-working guideline.
@@ -72,7 +72,7 @@ Do not silently invent or reconcile product behavior.
 - avoid unrelated refactoring;
 - preserve approved architectural boundaries;
 - add or update tests for behavior changes;
-- update traceability when architecture or responsibilities change;
+- update architecture documentation when responsibilities change;
 - do not overwrite serialized model artifacts.
 
 ### After editing

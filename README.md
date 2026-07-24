@@ -310,9 +310,6 @@ contextual do cliente.
 
 - Relatorio academico: `docs/Relatorio.md`
 - Modelo de autoridade: `docs/architecture/authority-model.md`
-- Diagnostico do repositorio: `docs/architecture/repository-diagnosis.md`
-- Traceability da implementacao:
-  `docs/architecture/implementation-traceability.md`
 - ADR de arquitetura: `docs/architecture/adr/ADR-0001.md`
 - Especificacao da orquestracao de risco:
   `docs/features/churn-risk-orchestration.md`
