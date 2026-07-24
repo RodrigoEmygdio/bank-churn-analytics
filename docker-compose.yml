@@ -1,0 +1,7 @@
+services:
+  bank-churn-analytics:
+    build:
+      context: .
+    image: bank-churn-analytics
+    ports:
+      - "8501:8501"
