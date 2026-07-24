@@ -43,6 +43,24 @@ def test_artifact_loader_is_only_source_module_importing_joblib() -> None:
     assert joblib_importers == [Path("src/churn_app/services/artifact_loader.py")]
 
 
+def test_input_builder_is_only_source_module_importing_pandas() -> None:
+    source_paths = Path("src").glob("**/*.py")
+    pandas_importers = [
+        path for path in source_paths if "pandas" in _imported_roots(path)
+    ]
+
+    assert pandas_importers == [Path("src/churn_app/services/input_builder.py")]
+
+
+def test_input_builder_imports_no_forbidden_runtime_boundaries() -> None:
+    imported_roots = _imported_roots(Path("src/churn_app/services/input_builder.py"))
+
+    assert "joblib" not in imported_roots
+    assert "streamlit" not in imported_roots
+    assert "prediction_service" not in imported_roots
+    assert "decision_policy" not in imported_roots
+
+
 def _imported_roots(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
     imported_roots: set[str] = set()
