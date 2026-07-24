@@ -89,6 +89,48 @@ Depois de iniciar o servidor, acesse:
 http://localhost:8501
 ```
 
+## Executando com Docker
+
+Docker e uma alternativa reproduzivel ao fluxo local com `uv`. Ele usa os
+mesmos artefatos versionados em `artifacts/` e executa a aplicacao Streamlit na
+porta padrao `8501`.
+
+Construa a imagem:
+
+```bash
+docker build -t bank-churn-analytics .
+```
+
+Execute o container:
+
+```bash
+docker run --rm -p 8501:8501 bank-churn-analytics
+```
+
+Acesse:
+
+```text
+http://localhost:8501
+```
+
+Para interromper o container em primeiro plano, use `Ctrl+C`.
+
+Tambem e possivel executar com Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+Para parar o servico iniciado pelo Compose, use `Ctrl+C` no terminal ou:
+
+```bash
+docker compose down
+```
+
+Os arquivos `.joblib` incluidos na imagem devem permanecer artefatos confiaveis
+do repositorio. Nao substitua esses arquivos por modelos de origem externa ou
+enviados por usuarios.
+
 ## Como usar a aplicacao
 
 1. Preencha o formulario com os atributos do cliente:
