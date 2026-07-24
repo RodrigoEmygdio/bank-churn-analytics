@@ -179,3 +179,22 @@ Rationale:
 - both models detected churn;
 - the evidence is mutually reinforcing;
 - this agreement corresponds to critical churn risk.
+
+## Recommendation Engine
+
+The Recommendation Engine consumes an `InterpretationResult` and returns a
+presentation-neutral `RecommendationResult`.
+
+Only the interpreted `RiskLevel` determines the recommendation. The engine must
+not inspect predicted classes, probabilities, model identities, evidence, or
+rationale.
+
+| Risk Level | Priority | Objective | Recommendations | Expected Outcome |
+|---|---|---|---|---|
+| `LOW` | `LOW` | Maintain customer relationship. | Continue periodic monitoring. Maintain current customer engagement. No immediate retention action is required. | Customer relationship remains stable through normal monitoring. |
+| `MODERATE` | `MEDIUM` | Investigate potential early churn indicators. | Review recent customer activity. Monitor account behavior. Consider proactive customer contact if additional indicators emerge. | Potential churn indicators are assessed before escalation. |
+| `HIGH` | `HIGH` | Reduce customer churn risk through proactive engagement. | Contact the customer. Review customer satisfaction. Evaluate appropriate retention actions. | Customer retention opportunities are identified before churn occurs. |
+| `CRITICAL` | `URGENT` | Execute immediate customer retention strategy. | Initiate urgent retention campaign. Escalate to customer success team. Prioritize executive follow-up if applicable. | Immediate intervention maximizes retention opportunity. |
+
+The recommendation contract must not contain presentation formatting, icons,
+colors, HTML, Markdown, generated text, or customer-message content.

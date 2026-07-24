@@ -9,6 +9,10 @@ from churn_app.domain.prediction import (
     ModelType,
     PredictionResult,
 )
+from churn_app.domain.recommendation import (
+    RecommendationPriority,
+    RecommendationResult,
+)
 from churn_app.domain.risk_level import RiskLevel
 
 __all__ = [
@@ -19,5 +23,7 @@ __all__ = [
     "ModelRole",
     "ModelType",
     "PredictionResult",
+    "RecommendationPriority",
+    "RecommendationResult",
     "RiskLevel",
 ]

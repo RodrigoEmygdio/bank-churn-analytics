@@ -13,6 +13,8 @@ from churn_app.domain import (
     ModelRole,
     ModelType,
     PredictionResult,
+    RecommendationPriority,
+    RecommendationResult,
     RiskLevel,
 )
 
@@ -106,6 +108,23 @@ def test_interpretation_result_separates_evidence_and_rationale() -> None:
     assert not hasattr(interpretation, "icon")
 
 
+def test_recommendation_result_is_presentation_neutral() -> None:
+    recommendation = RecommendationResult(
+        risk_level=RiskLevel.MODERATE,
+        priority=RecommendationPriority.MEDIUM,
+        objective="Investigate potential early churn indicators.",
+        recommendations=("Review recent customer activity.",),
+        expected_outcome="Potential churn indicators are assessed before escalation.",
+    )
+
+    assert recommendation.priority is RecommendationPriority.MEDIUM
+    assert recommendation.recommendations == ("Review recent customer activity.",)
+    assert not hasattr(recommendation, "html")
+    assert not hasattr(recommendation, "markdown")
+    assert not hasattr(recommendation, "color")
+    assert not hasattr(recommendation, "icon")
+
+
 def test_domain_does_not_export_premature_orchestration_result() -> None:
     assert "OrchestrationResult" not in domain.__all__
     assert not hasattr(domain, "OrchestrationResult")
@@ -120,6 +139,7 @@ def test_boundary_modules_import_without_loading_artifacts() -> None:
         "churn_app.services.input_builder",
         "churn_app.services.prediction_service",
         "churn_app.services.risk_interpreter",
+        "churn_app.services.recommendation_engine",
         "churn_app.services.decision_policy",
         "churn_app.ui.form",
         "churn_app.ui.result",
