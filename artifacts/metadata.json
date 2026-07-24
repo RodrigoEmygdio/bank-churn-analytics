@@ -1,0 +1,69 @@
+{
+  "project": "bank-customer-churn",
+  "artifact_version": "1.0.0",
+  "exported_at_utc": "2026-07-24T07:52:44.689492+00:00",
+  "python_version": "3.14.3",
+  "scikit_learn_version": "1.9.0",
+  "pandas_version": "3.0.3",
+  "numpy_version": "2.5.1",
+  "joblib_version": "1.5.3",
+  "target": "Exited",
+  "positive_class": 1,
+  "models": {
+    "gradient_boosting": {
+      "file": "gradient_boosting_pipeline.joblib",
+      "role": "primary",
+      "test_accuracy": 0.87,
+      "test_precision": 0.7816091954022989,
+      "test_recall": 0.5012285012285013,
+      "test_roc_auc": 0.8698158867650393,
+      "test_pr_auc": 0.7209267980551891,
+      "sha256": "98a0977172722299c88d251274b9661ebeadf37b1e19bbed2e5101400195b357"
+    },
+    "decision_tree": {
+      "file": "decision_tree_pipeline.joblib",
+      "role": "sensitivity_complement",
+      "test_accuracy": 0.7795,
+      "test_precision": 0.47360248447204967,
+      "test_recall": 0.7493857493857494,
+      "test_roc_auc": 0.8323269340218493,
+      "test_pr_auc": 0.6607467101124858,
+      "sha256": "246893e871742fea9629afb8543eab2ce6d2117be6c0810160f070cc89e9dbd3"
+    }
+  },
+  "decision_policy": {
+    "gb_0_dt_0": "low",
+    "gb_0_dt_1": "attention",
+    "gb_1_dt_0": "high",
+    "gb_1_dt_1": "critical"
+  },
+  "input_schema": {
+    "feature_names": [
+      "CreditScore",
+      "Geography",
+      "Gender",
+      "Age",
+      "Tenure",
+      "Balance",
+      "NumOfProducts",
+      "HasCrCard",
+      "IsActiveMember",
+      "EstimatedSalary",
+      "ProductsGroup"
+    ],
+    "feature_count": 11,
+    "dtypes": {
+      "CreditScore": "int64",
+      "Geography": "str",
+      "Gender": "str",
+      "Age": "int64",
+      "Tenure": "int64",
+      "Balance": "float64",
+      "NumOfProducts": "int64",
+      "HasCrCard": "int64",
+      "IsActiveMember": "int64",
+      "EstimatedSalary": "float64",
+      "ProductsGroup": "category"
+    }
+  }
+}
