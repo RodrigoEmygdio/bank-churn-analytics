@@ -13,6 +13,6 @@ class RiskLevel(StrEnum):
     """Approved consolidated risk levels."""
 
     LOW = "LOW"
-    ATTENTION = "ATTENTION"
+    MODERATE = "MODERATE"
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"

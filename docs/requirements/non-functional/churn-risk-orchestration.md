@@ -150,14 +150,9 @@ Predicted classes must remain visible after consolidation.
 
 ## 11. Decision Policy
 
-The approved risk policy is:
+The approved risk policy is defined by the canonical feature specification:
 
-| Gradient Boosting | Decision Tree | Risk Level |
-|---:|---:|:---|
-| 0 | 0 | `LOW` |
-| 0 | 1 | `ATTENTION` |
-| 1 | 0 | `HIGH` |
-| 1 | 1 | `CRITICAL` |
+`docs/features/churn-risk-orchestration.md`
 
 ### Semantics
 
@@ -165,7 +160,7 @@ The approved risk policy is:
 
 Neither model detected sufficient evidence of churn.
 
-#### ATTENTION
+#### MODERATE
 
 Only the complementary sensitivity model predicted churn.
 
@@ -178,7 +173,7 @@ The primary Gradient Boosting model predicted churn while the Decision Tree
 remained negative.
 
 The primary model prediction gives this result greater operational relevance
-than `ATTENTION`.
+than `MODERATE`.
 
 #### CRITICAL
 

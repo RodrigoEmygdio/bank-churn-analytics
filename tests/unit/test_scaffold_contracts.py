@@ -47,7 +47,7 @@ def test_customer_input_excludes_derived_products_group() -> None:
 def test_risk_levels_are_exactly_approved_values() -> None:
     assert [level.value for level in RiskLevel] == [
         "LOW",
-        "ATTENTION",
+        "MODERATE",
         "HIGH",
         "CRITICAL",
     ]

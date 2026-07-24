@@ -12,7 +12,7 @@ from behavior intentionally deferred to later implementation stages.
 | Artifact management          | `src/churn_app/services/artifact_loader.py`    | Implemented   | Metadata parsing, repository validation, hash verification, joblib loading, and deterministic artifact exceptions                              |
 | Input construction           | `src/churn_app/services/input_builder.py`      | Implemented   | Validates `CustomerInput`, derives `ProductsGroup`, and builds one-row pandas DataFrames in metadata schema order                              |
 | Prediction                   | `src/churn_app/services/prediction_service.py` | Implemented   | Executes both loaded pipelines independently, extracts model-specific probabilities when available, and returns immutable prediction contracts |
-| Orchestration                | `src/churn_app/services/decision_policy.py`    | Implemented   | Pure four-level mapping from independent model classes to `RiskLevel`                                                                          |
+| Decision Policy              | `src/churn_app/services/decision_policy.py`    | Implemented   | Pure infrastructure-independent mapping from four predicted-class combinations to `RiskLevel`; probabilities are not used                      |
 | Presentation                 | `src/churn_app/ui/`                            | Contract only | Final form, result rendering, recommendations, and disclaimer deferred                                                                         |
 | Test structure               | `tests/`                                       | Implemented   | Unit, integration, artifact-contract, and architectural-boundary tests cover implemented behavior                                              |
 

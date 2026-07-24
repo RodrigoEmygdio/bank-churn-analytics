@@ -28,10 +28,17 @@ def test_domain_modules_do_not_import_infrastructure_libraries() -> None:
 
 def test_decision_policy_imports_no_infrastructure_libraries() -> None:
     path = Path("src/churn_app/services/decision_policy.py")
+    imported_modules = _imported_modules(path)
 
     assert _imported_roots(path).isdisjoint(
         {"streamlit", "pandas", "sklearn", "joblib", "hashlib", "json"}
     )
+    assert "churn_app.services.artifact_loader" not in imported_modules
+    assert "churn_app.services.input_builder" not in imported_modules
+    assert "churn_app.services.prediction_service" not in imported_modules
+    assert "churn_app.services.interpreter" not in imported_modules
+    assert "churn_app.services.recommendation" not in imported_modules
+    assert "churn_app.ui" not in imported_modules
 
 
 def test_artifact_loader_is_only_source_module_importing_joblib() -> None:

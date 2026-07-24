@@ -155,7 +155,7 @@ The application must consolidate the two predicted classes into one of four
 risk levels:
 
 - `LOW`
-- `ATTENTION`
+- `MODERATE`
 - `HIGH`
 - `CRITICAL`
 
