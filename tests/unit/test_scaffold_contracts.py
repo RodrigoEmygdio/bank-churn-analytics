@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import importlib
 
-from churn_app import config
+from churn_app import config, domain
 from churn_app.domain import (
     CustomerInput,
     ModelIdentity,
     ModelPrediction,
     ModelRole,
     ModelType,
-    OrchestrationResult,
+    PredictionResult,
     RiskLevel,
 )
 
@@ -70,18 +70,25 @@ def test_model_predictions_preserve_independent_probabilities() -> None:
     dt_prediction = ModelPrediction(
         model=dt_identity, predicted_class=0, probability=None
     )
-    result = OrchestrationResult(
-        risk_level=RiskLevel.HIGH,
+    result = PredictionResult(
         gradient_boosting=gb_prediction,
         decision_tree=dt_prediction,
     )
 
     assert result.gradient_boosting.probability == 0.6
+    assert result.gradient_boosting.supports_probability is True
     assert result.decision_tree.probability is None
+    assert result.decision_tree.supports_probability is False
+    assert not hasattr(result, "risk_level")
     assert not hasattr(result, "combined_probability")
     assert not hasattr(result, "average_probability")
     assert not hasattr(result, "ensemble_probability")
     assert not hasattr(result, "confidence_score")
+
+
+def test_domain_does_not_export_premature_orchestration_result() -> None:
+    assert "OrchestrationResult" not in domain.__all__
+    assert not hasattr(domain, "OrchestrationResult")
 
 
 def test_boundary_modules_import_without_loading_artifacts() -> None:

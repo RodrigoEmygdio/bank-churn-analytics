@@ -10,8 +10,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from churn_app.domain.risk_level import RiskLevel
-
 
 class ModelType(StrEnum):
     """Closed set of exported model identities."""
@@ -48,18 +46,19 @@ class ModelPrediction:
     predicted_class: int
     probability: float | None = None
 
+    @property
+    def supports_probability(self) -> bool:
+        """Whether this model exposed a model-specific probability."""
+        return self.probability is not None
+
 
 @dataclass(frozen=True, slots=True)
-class OrchestrationResult:
-    """Future consolidated decision-support result.
+class PredictionResult:
+    """Independent outputs produced by the two exported pipelines.
 
-    The risk level is supplied by the future decision-policy implementation.
-    This contract only preserves the shape of the output expected by later
-    presentation code.
+    This contract contains no risk level, recommendation, interpretation, or
+    combined probability.
     """
 
-    risk_level: RiskLevel
     gradient_boosting: ModelPrediction
     decision_tree: ModelPrediction
-    interpretation: str | None = None
-    recommendation: str | None = None
