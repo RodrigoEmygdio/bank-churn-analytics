@@ -23,8 +23,21 @@ dependencies = [
     "tabulate>=0.10.0",
 ]
 
+[build-system]
+requires = ["setuptools>=80.0.0"]
+build-backend = "setuptools.build_meta"
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.0",
     "ruff>=0.14.0",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[tool.ruff]
+extend-exclude = ["notebooks/*.ipynb"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
