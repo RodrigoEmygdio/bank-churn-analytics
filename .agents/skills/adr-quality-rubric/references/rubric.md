@@ -20,14 +20,14 @@ The rubric evaluates whether an ADR records a durable, evidence-based architectu
 
 Each criterion receives a score from `0` to `5`.
 
-| Score | Meaning |
-|---:|---|
-| 0 | Missing or fundamentally incorrect |
-| 1 | Very weak; major revision required |
-| 2 | Partially addressed; significant gaps remain |
-| 3 | Acceptable baseline; improvements recommended |
-| 4 | Strong; only minor improvements required |
-| 5 | Excellent; clear, complete, and architecturally mature |
+| Score | Meaning                                                |
+|------:|--------------------------------------------------------|
+|     0 | Missing or fundamentally incorrect                     |
+|     1 | Very weak; major revision required                     |
+|     2 | Partially addressed; significant gaps remain           |
+|     3 | Acceptable baseline; improvements recommended          |
+|     4 | Strong; only minor improvements required               |
+|     5 | Excellent; clear, complete, and architecturally mature |
 
 The maximum score is `40`.
 
@@ -37,13 +37,13 @@ The final score must not be used as the only approval criterion. Critical archit
 
 ## Quality Gates
 
-| Score | Classification | Expected Action |
-|---:|---|---|
-| 36–40 | Excellent | Ready for human approval |
-| 31–35 | Strong | Minor review recommended |
+| Score | Classification               | Expected Action                   |
+|------:|------------------------------|-----------------------------------|
+| 36–40 | Excellent                    | Ready for human approval          |
+| 31–35 | Strong                       | Minor review recommended          |
 | 24–30 | Acceptable with reservations | Revision required before approval |
-| 16–23 | Weak | Significant remediation required |
-| 0–15 | Unacceptable | Rewrite the ADR |
+| 16–23 | Weak                         | Significant remediation required  |
+|  0–15 | Unacceptable                 | Rewrite the ADR                   |
 
 An ADR must not be considered ready for approval when any critical criterion receives a score below `3`.
 
