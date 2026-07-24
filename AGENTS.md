@@ -1,473 +1,242 @@
 # AGENTS.md
 
-## 1. Project Overview
+## 1. Purpose
 
-This repository contains an academic Machine Learning application for predicting bank customer churn.
+This file defines how coding agents must work in this repository.
 
-The application uses two trained scikit-learn pipelines:
+Product behavior, quality attributes, feature behavior, architectural decisions,
+and operational artifact contracts are defined in specialized sources:
 
-- Gradient Boosting: primary model, selected for its overall predictive balance and generalization.
-- Decision Tree: complementary sensitivity model, selected for its higher recall and ability to detect churn cases missed by the primary model.
-
-The application must not reduce the two predictions to an unexplained binary OR rule. It must preserve the individual model outputs and consolidate them into an interpretable four-level risk policy.
-
-## 2. Project Objective
-
-Build a reliable and explainable Streamlit application that:
-
-1. collects customer attributes;
-2. validates the input;
-3. derives the required model features;
-4. executes both trained pipelines;
-5. presents each model prediction separately;
-6. applies the defined decision policy;
-7. returns an interpretable churn risk level;
-8. explains agreement or disagreement between the models;
-9. provides a non-deterministic operational recommendation.
-
-This is an academic decision-support application. It must not claim that a customer will certainly leave the bank.
-
-## 3. Source of Truth
-
-The following files are authoritative:
-
+- `docs/requirements/functional/`
+- `docs/requirements/non-functional/`
+- `docs/features/`
+- `docs/architecture/`
 - `artifacts/metadata.json`
-  - artifact names;
-  - model versions;
-  - expected input schema;
-  - positive class;
-  - decision policy;
-  - validation metrics;
-  - artifact hashes.
-
 - `artifacts/reference_predictions.csv`
-  - reference inputs and expected predictions;
-  - used for integration testing.
 
-- serialized `.joblib` pipelines
-  - contain both preprocessing and trained estimators;
-  - must be loaded as complete pipelines;
-  - preprocessing must not be reimplemented manually.
+Do not treat this file as the runtime specification of the application.
 
-When code, assumptions, and metadata disagree, stop and report the inconsistency instead of silently guessing.
+## 2. Project Context
 
-## 4. Model Roles
+This repository contains a decision-support application for bank-customer churn
+analysis using trained Machine Learning pipelines.
 
-### Gradient Boosting
+The project is both:
 
-Role: primary model.
+- an academic Machine Learning delivery;
+- a software-engineering portfolio demonstrating investigation, ML engineering,
+  architecture, artifact governance, testing, and AI-assisted development.
 
-The Gradient Boosting prediction has greater operational relevance because it demonstrated the best overall balance among the evaluated models.
+Agents must preserve this dual purpose by favoring traceability, reproducibility,
+clear boundaries, and professional implementation quality.
 
-### Decision Tree
+## 3. Authority and Required Reading
 
-Role: complementary sensitivity model.
+Before editing code, inspect only the sources relevant to the task.
 
-The Decision Tree must not override the Gradient Boosting prediction. Its purpose is to identify additional churn-risk cases and expose disagreement between the classifiers.
+Use this precedence:
 
-## 5. Decision Policy
+1. explicit human-approved instructions;
+2. applicable accepted ADRs;
+3. applicable feature specifications;
+4. applicable functional and non-functional requirements;
+5. implementation traceability;
+6. operational metadata and repository-controlled artifacts;
+7. existing code and tests;
+8. this file as an agent-working guideline.
 
-The application must implement exactly the following policy:
+Use each source only for its intended responsibility.
 
-| Gradient Boosting | Decision Tree | Risk level |
-|-------------------|---------------|------------|
-| 0                 | 0             | LOW        |
-| 0                 | 1             | ATTENTION  |
-| 1                 | 0             | HIGH       |
-| 1                 | 1             | CRITICAL   |
+If authoritative sources disagree:
 
-Semantics:
+- stop;
+- identify the conflicting sources;
+- describe the impact;
+- request human review.
 
-- `LOW`: neither model detected sufficient evidence of churn;
-- `ATTENTION`: only the more sensitive Decision Tree predicted churn;
-- `HIGH`: the primary Gradient Boosting model predicted churn;
-- `CRITICAL`: both models predicted churn.
+Do not silently invent or reconcile product behavior.
 
-The policy must be implemented in a pure, independently tested function.
+## 4. Change Discipline
 
-Do not replace this policy with:
+### Before editing
 
-- majority voting;
-- direct logical OR as the final binary result;
-- arithmetic mean of probabilities;
-- weighted average of probabilities;
-- an invented combined probability.
+- inspect the affected modules and tests;
+- identify applicable requirements, feature specifications, and ADRs;
+- inspect operational metadata when the task touches model artifacts or schema;
+- propose or apply the smallest coherent change;
+- identify deferred responsibilities explicitly.
 
-Any change to the decision policy requires explicit user approval.
+### During editing
 
-## 6. Probability Handling
+- keep the patch focused;
+- avoid unrelated refactoring;
+- preserve approved architectural boundaries;
+- add or update tests for behavior changes;
+- update traceability when architecture or responsibilities change;
+- do not overwrite serialized model artifacts.
 
-If the pipelines expose `predict_proba`, show each probability separately.
+### After editing
 
-Allowed:
+- run applicable tests;
+- run linting and formatting checks;
+- inspect the final diff;
+- confirm no model artifact was modified;
+- report anything that remains unverified.
 
-- Gradient Boosting churn probability;
-- Decision Tree churn probability.
-
-Not allowed:
-
-- averaging the probabilities;
-- summing the probabilities;
-- presenting a combined churn probability;
-- describing uncalibrated probabilities as certainty.
-
-Use language such as:
-
-- estimated risk;
-- model prediction;
-- probability estimated by the model;
-- indication of churn.
-
-Avoid language such as:
-
-- the customer will leave;
-- guaranteed churn;
-- certain prediction.
-
-## 7. Input Contract
-
-The application must accept user-friendly customer inputs and construct a pandas DataFrame compatible with the pipeline input schema declared in `metadata.json`.
-
-The expected business inputs include:
-
-- `CreditScore`;
-- `Geography`;
-- `Gender`;
-- `Age`;
-- `Tenure`;
-- `Balance`;
-- `NumOfProducts`;
-- `HasCrCard`;
-- `IsActiveMember`;
-- `EstimatedSalary`.
-
-The derived feature `ProductsGroup` must be calculated internally from `NumOfProducts`.
-
-The user must not be asked to provide both `NumOfProducts` and `ProductsGroup`.
-
-Before prediction:
-
-1. validate required fields;
-2. derive `ProductsGroup`;
-3. construct a one-row DataFrame;
-4. align columns with the metadata schema;
-5. reject missing or unexpected fields;
-6. preserve expected data types.
-
-Do not silently substitute default values for missing mandatory inputs.
-
-## 8. Feature Derivation
-
-Implement product grouping in a dedicated function.
-
-The implementation must reproduce exactly the transformation used during training.
-
-Do not infer or change category labels from intuition.
-
-If the training transformation cannot be verified from the repository or metadata, stop and request clarification.
-
-## 9. Architecture Rules
-
-Maintain separation between:
-
-- user interface;
-- input validation;
-- feature construction;
-- artifact loading;
-- model inference;
-- decision policy;
-- result presentation.
-
-Recommended responsibilities:
-
-- `app.py`: Streamlit composition only;
-- `src/churn_app/config.py`: repository paths and application configuration;
-- `src/churn_app/domain/`: immutable domain models and enums;
-- `src/churn_app/services/artifact_loader.py`: loading and artifact integrity;
-- `src/churn_app/services/input_builder.py`: validation and DataFrame construction;
-- `src/churn_app/services/prediction_service.py`: execution of both pipelines;
-- `src/churn_app/services/decision_policy.py`: risk consolidation;
-- `src/churn_app/ui/`: Streamlit components.
-
-Do not place model-loading logic, business rules, and UI rendering in the same function.
-
-Prefer small, typed, deterministic functions.
-
-## 10. Artifact Loading
-
-Load artifacts only from the configured artifacts directory.
-
-Requirements:
-
-- use `joblib`;
-- load each model once per application process;
-- use Streamlit resource caching where appropriate;
-- provide clear errors when an artifact is missing or incompatible;
-- never download or replace models automatically;
-- never retrain models inside the application;
-- never modify serialized artifacts at runtime.
-
-Only trusted local model files may be loaded.
-
-If SHA-256 hashes exist in `metadata.json`, provide a validation function and test it.
-
-## 11. Error Handling
-
-The application must fail safely and informatively.
-
-Handle at minimum:
-
-- missing artifact;
-- invalid metadata;
-- schema mismatch;
-- unsupported input category;
-- incompatible artifact;
-- model without `predict`;
-- model without `predict_proba`;
-- malformed reference data;
-- unexpected prediction output.
-
-Do not expose raw stack traces to the Streamlit user interface.
-
-Developer-facing exceptions should preserve useful context and exception chaining.
-
-## 12. User Interface Requirements
-
-Use Streamlit.
-
-The interface must include:
-
-1. title and short academic context;
-2. customer input form;
-3. explicit prediction action;
-4. consolidated risk level;
-5. individual model results;
-6. individual probabilities when available;
-7. explanation of model agreement or disagreement;
-8. operational recommendation;
-9. disclaimer that the output supports analysis and is not a deterministic decision.
-
-The interface should be clear and professional, but avoid unnecessary animation, excessive styling, or visual complexity.
-
-Do not use color as the only way to communicate risk.
-
-Each risk level must also include textual identification.
-
-## 13. Validation Rules
-
-Apply domain-compatible validation without inventing unsupported business assumptions.
-
-At minimum:
-
-- numeric fields must be finite;
-- `CreditScore` must be positive;
-- `Age` must be positive;
-- `Tenure` must not be negative;
-- `Balance` must not be negative;
-- `NumOfProducts` must be a positive integer;
-- `EstimatedSalary` must not be negative;
-- binary fields must use only allowed values;
-- categorical fields must use categories supported by the trained pipeline.
-
-Do not impose arbitrary upper bounds unless they are derived from the dataset, metadata, or explicit project requirements.
-
-Supported categorical values must be implemented in the input validation layer using the categories observed during model training:
-
-- `Geography`: `France`, `Germany`, `Spain`;
-- `Gender`: `Female`, `Male`;
-- `ProductsGroup`: `1`, `2`, `3+`.
-
-Do not extend `metadata.json` to declare categorical domains in this academic project.
-
-## 14. Testing Requirements
-
-Use `pytest`.
-
-Every implementation task must preserve or add tests.
-
-Minimum required coverage:
-
-### Unit tests
-
-- all four decision-policy combinations;
-- product-group derivation;
-- input validation;
-- DataFrame construction;
-- schema ordering;
-- interpretation text selection.
-
-### Integration tests
-
-- both artifacts load successfully;
-- both models generate predictions;
-- probabilities are in the interval `[0, 1]`;
-- output classes are valid;
-- reference cases reproduce expected predictions;
-- serialized model hashes match metadata when hashes are available.
-
-Tests must not retrain the models.
-
-## 15. Reference Prediction Tests
-
-Use `artifacts/reference_predictions.csv` as the main integration contract.
-
-For every reference row:
-
-1. extract the feature columns;
-2. execute both pipelines;
-3. compare predicted classes exactly;
-4. compare probabilities using an appropriate floating-point tolerance;
-5. verify the resulting decision-policy category.
-
-If a reference case fails, report the discrepancy. Do not update the expected outputs automatically.
-
-## 16. Code Quality
+## 5. Engineering Guidelines
 
 Use:
 
-- Python type hints;
+- English code and identifiers;
+- explicit type hints;
 - descriptive names;
-- docstrings for public modules, classes, and functions;
+- small, deterministic functions;
+- immutable contracts where practical;
 - `pathlib.Path`;
 - explicit exception types;
+- exception chaining when preserving lower-level context;
 - pure functions for deterministic business logic;
-- enums for risk levels where useful.
+- minimal dependencies.
 
 Avoid:
 
-- broad `except Exception` without re-raising or context;
-- duplicated schema definitions;
+- broad exception handling that hides failures;
 - global mutable state;
-- hard-coded artifact paths throughout the code;
-- unexplained numeric constants;
-- dead code;
-- premature abstractions;
-- unnecessary classes.
-
-Code and identifiers must be written in English.
+- duplicated contracts;
+- undocumented constants;
+- hidden file I/O at import time;
+- premature frameworks or abstractions;
+- dynamic imports without architectural need;
+- silent coercion of invalid data;
+- mixing UI, artifact loading, inference, and business policy.
 
 The user-facing interface may be written in Portuguese.
 
-## 17. Dependency Management
+## 6. Architectural Discipline
 
-Use `uv` and `pyproject.toml`.
+Maintain the dependency direction defined by accepted ADRs and implementation
+traceability.
 
-Keep dependencies minimal.
+At minimum, preserve separation between:
 
-Expected runtime dependencies:
+- domain contracts;
+- artifact loading and integrity;
+- input validation and feature construction;
+- model inference;
+- decision policy;
+- interpretation;
+- presentation;
+- application composition.
 
-- streamlit;
-- pandas;
-- numpy;
-- scikit-learn;
-- joblib.
+Do not move implementation-specific product rules into this file.
 
-Expected development dependencies:
+Concrete behavior belongs in:
 
-- pytest;
-- ruff;
-- mypy, only if configured and used consistently.
+- functional requirements;
+- non-functional requirements;
+- feature specifications;
+- ADRs;
+- operational metadata;
+- code and tests.
 
-Do not add a dependency when the same requirement can be reasonably implemented with the Python standard library.
+## 7. Repository and Artifact Safety
 
-## 18. Commands
+- Load only repository-controlled artifacts.
+- Never load user-provided or remote serialized model files.
+- Never accept arbitrary artifact paths from the UI.
+- Never retrain models inside the application unless explicitly requested.
+- Never modify serialized artifacts at runtime.
+- Do not suppress compatibility warnings without justification.
+- Do not persist customer input.
+- Do not add telemetry, analytics, network calls, or external services without
+  explicit approval.
 
-Use the commands defined by the repository configuration.
+## 8. Dependency Management and Commands
 
-Expected commands:
+Use `uv` and the commands configured by the repository.
+
+Relevant commands may include:
 
 ```bash
 uv sync
-uv run streamlit run app.py
 uv run pytest
 uv run ruff check .
 uv run ruff format --check .
+uv run streamlit run app.py
 ```
 
-Before completing a coding task, run all available relevant checks.
+Run all checks relevant to the task.
 
-If a command cannot be executed, state:
+If a command cannot be executed, report:
 
-which command failed;
-why it failed;
-what remains unverified.
+- the command;
+- why it failed or was unavailable;
+- what remains unverified.
 
-Do not claim that tests passed unless they were actually executed successfully.
+Do not claim that a check passed unless it was executed successfully.
 
-## 19. Change Discipline
+## 9. Testing Discipline
 
-Before editing:
+Every implementation task must preserve or add tests when behavior changes.
 
-inspect the repository;
-read metadata.json;
-inspect the input schema;
-inspect the reference cases;
-identify existing tests and conventions;
-propose the smallest coherent implementation.
+Prefer tests that validate:
 
-During editing:
+- public contracts;
+- architectural boundaries;
+- deterministic business rules;
+- repository-controlled artifact compatibility;
+- reference behavior;
+- error semantics.
 
-avoid unrelated refactoring;
-preserve working behavior;
-keep the patch focused;
-update tests with behavior changes;
-update documentation when architecture or commands change.
+Tests must not retrain the models.
 
-After editing:
+Do not update expected reference outputs automatically when tests fail.
 
-run tests;
-run linting;
-inspect the final diff;
-confirm no artifact was overwritten;
-summarize changes and validation evidence.
+## 10. Documentation Discipline
 
-##  20. Security and Safety
+Update documentation when:
 
-Serialized joblib artifacts may execute code during deserialization.
+- product behavior changes;
+- a quality attribute changes;
+- an ADR is accepted or superseded;
+- module responsibilities change;
+- a feature contract changes;
+- operational assumptions change.
 
-Therefore:
+Do not duplicate full product specifications in this file.
 
-load only repository-controlled artifacts;
-never load user-uploaded model files;
-never accept arbitrary artifact paths from the UI;
-never deserialize remote content;
-do not suppress compatibility warnings without justification.
-
-Do not store customer input persistently.
-
-Do not add telemetry, analytics, external APIs, or network calls unless explicitly requested.
-
-## 21. Definition of Done
+## 11. Definition of Done
 
 A task is complete only when:
 
-requested behavior is implemented;
-architecture boundaries remain respected;
-tests cover the new behavior;
-reference predictions remain valid;
-relevant tests and quality checks pass;
-no model artifact has been modified;
-user-facing messages remain non-deterministic and academically appropriate;
-documentation is updated where necessary.
-## 22. Agent Response Format
+- requested behavior is implemented;
+- applicable requirements are satisfied;
+- architectural boundaries remain respected;
+- tests cover the changed behavior;
+- relevant checks pass;
+- no model artifact was modified;
+- documentation is updated when necessary;
+- unresolved risks are reported honestly.
 
-At the end of each coding task, report:
+## 12. Agent Response Format
 
-Implemented
+At the end of each coding task, report exactly these sections:
 
-Brief summary of changes.
+## Implemented
 
-Files changed
+Brief summary of the completed work.
 
-List the relevant files.
+## Files Changed
 
-Validation
+List the relevant created or modified files.
 
-Commands executed and their results.
+## Validation
 
-Remaining risks
+List commands executed and their results.
 
-Only unresolved or unverified items.
+## Remaining Risks
+
+List only unresolved, deferred, or unverified items.
 
 Do not provide generic success claims.
-Do not hide failed tests or skipped validation.
+Do not hide failed or skipped validation.
