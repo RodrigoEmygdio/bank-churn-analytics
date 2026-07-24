@@ -10,11 +10,11 @@ The Decision Policy consumes a completed `PredictionResult` and returns only a
 preserved as evidence for later presentation but do not alter the policy.
 
 | Gradient Boosting | Decision Tree | Risk Level |
-|---:|---:|:---|
-| 0 | 0 | `LOW` |
-| 0 | 1 | `MODERATE` |
-| 1 | 0 | `HIGH` |
-| 1 | 1 | `CRITICAL` |
+|------------------:|--------------:|:-----------|
+|                 0 |             0 | `LOW`      |
+|                 0 |             1 | `MODERATE` |
+|                 1 |             0 | `HIGH`     |
+|                 1 |             1 | `CRITICAL` |
 
 ## Semantics
 
@@ -49,6 +49,25 @@ For each model, the presentation contract may expose:
 Probabilities are supporting model evidence only. They do not affect
 `RiskLevel`, are not averaged, are not combined, and do not produce an ensemble
 confidence score.
+
+## UI Internationalization Boundary
+
+The Streamlit UI may render the application in English or Brazilian Portuguese
+through a deterministic local translation catalog.
+
+Internationalization belongs only to the user-facing presentation boundary. It
+must not change:
+
+- model inputs sent to the pipelines;
+- model predictions;
+- probability values;
+- `RiskLevel` enum values;
+- `RecommendationPriority` enum values;
+- Decision Policy mappings;
+- canonical domain contracts.
+
+Localized geography and gender labels must be mapped back to canonical domain
+values before `CustomerInput` is created.
 
 ## Risk Interpretation
 
@@ -205,12 +224,12 @@ Only the interpreted `RiskLevel` determines the recommendation. The engine must
 not inspect predicted classes, probabilities, model identities, evidence, or
 rationale.
 
-| Risk Level | Priority | Objective | Recommendations | Expected Outcome |
-|---|---|---|---|---|
-| `LOW` | `LOW` | Maintain customer relationship. | Continue periodic monitoring. Maintain current customer engagement. No immediate retention action is required. | Customer relationship remains stable through normal monitoring. |
-| `MODERATE` | `MEDIUM` | Investigate potential early churn indicators. | Review recent customer activity. Monitor account behavior. Consider proactive customer contact if additional indicators emerge. | Potential churn indicators are assessed before escalation. |
-| `HIGH` | `HIGH` | Reduce customer churn risk through proactive engagement. | Contact the customer. Review customer satisfaction. Evaluate appropriate retention actions. | Customer retention opportunities are identified before churn occurs. |
-| `CRITICAL` | `URGENT` | Execute immediate customer retention strategy. | Initiate urgent retention campaign. Escalate to customer success team. Prioritize executive follow-up if applicable. | Immediate intervention maximizes retention opportunity. |
+| Risk Level | Priority | Objective                                                | Recommendations                                                                                                                 | Expected Outcome                                                     |
+|------------|----------|----------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| `LOW`      | `LOW`    | Maintain customer relationship.                          | Continue periodic monitoring. Maintain current customer engagement. No immediate retention action is required.                  | Customer relationship remains stable through normal monitoring.      |
+| `MODERATE` | `MEDIUM` | Investigate potential early churn indicators.            | Review recent customer activity. Monitor account behavior. Consider proactive customer contact if additional indicators emerge. | Potential churn indicators are assessed before escalation.           |
+| `HIGH`     | `HIGH`   | Reduce customer churn risk through proactive engagement. | Contact the customer. Review customer satisfaction. Evaluate appropriate retention actions.                                     | Customer retention opportunities are identified before churn occurs. |
+| `CRITICAL` | `URGENT` | Execute immediate customer retention strategy.           | Initiate urgent retention campaign. Escalate to customer success team. Prioritize executive follow-up if applicable.            | Immediate intervention maximizes retention opportunity.              |
 
 The recommendation contract must not contain presentation formatting, icons,
 colors, HTML, Markdown, generated text, or customer-message content.
@@ -223,18 +242,18 @@ The Presentation Layer consumes an `InterpretationResult` and a
 The layer performs composition only. It must not predict, classify, interpret,
 recommend, rewrite text, concatenate content, format output, or render UI.
 
-| Source | Destination |
-|---|---|
-| `InterpretationResult.risk_level` | `PresentationResult.risk_level` |
-| `InterpretationResult.title` | `PresentationResult.title` |
-| `InterpretationResult.summary` | `PresentationResult.summary` |
-| `InterpretationResult.model_agreement` | `PresentationResult.model_agreement` |
-| `InterpretationResult.evidence` | `PresentationResult.evidence` |
-| `InterpretationResult.rationale` | `PresentationResult.rationale` |
-| `RecommendationResult.priority` | `PresentationResult.recommendation_priority` |
-| `RecommendationResult.objective` | `PresentationResult.objective` |
-| `RecommendationResult.recommendations` | `PresentationResult.recommendations` |
-| `RecommendationResult.expected_outcome` | `PresentationResult.expected_outcome` |
+| Source                                  | Destination                                  |
+|-----------------------------------------|----------------------------------------------|
+| `InterpretationResult.risk_level`       | `PresentationResult.risk_level`              |
+| `InterpretationResult.title`            | `PresentationResult.title`                   |
+| `InterpretationResult.summary`          | `PresentationResult.summary`                 |
+| `InterpretationResult.model_agreement`  | `PresentationResult.model_agreement`         |
+| `InterpretationResult.evidence`         | `PresentationResult.evidence`                |
+| `InterpretationResult.rationale`        | `PresentationResult.rationale`               |
+| `RecommendationResult.priority`         | `PresentationResult.recommendation_priority` |
+| `RecommendationResult.objective`        | `PresentationResult.objective`               |
+| `RecommendationResult.recommendations`  | `PresentationResult.recommendations`         |
+| `RecommendationResult.expected_outcome` | `PresentationResult.expected_outcome`        |
 
 The interpretation and recommendation risk levels must match. A mismatch is a
 contract error and must not be corrected silently.

@@ -17,6 +17,7 @@ from churn_app.domain import (
     RecommendationPriority,
     RiskLevel,
 )
+from churn_app.i18n import Locale
 from churn_app.services.prediction_service import PredictionError
 
 
@@ -26,7 +27,7 @@ def test_customer_form_returns_customer_input_when_submitted(
     fake_streamlit = _FakeFormStreamlit(submitted=True)
     monkeypatch.setattr(form_module, "st", fake_streamlit)
 
-    customer = form_module.render_customer_form()
+    customer = form_module.render_customer_form(Locale.EN)
 
     assert customer == CustomerInput(
         credit_score=650,
@@ -41,6 +42,7 @@ def test_customer_form_returns_customer_input_when_submitted(
         estimated_salary=50000.0,
     )
     assert fake_streamlit.form_key == "customer-analysis-form"
+    assert fake_streamlit.subheaders == ["Customer Information"]
     assert fake_streamlit.button_labels == ["Analyze Customer"]
     assert fake_streamlit.number_labels == [
         "Credit Score",
@@ -63,7 +65,38 @@ def test_customer_form_returns_none_before_submit(
 ) -> None:
     monkeypatch.setattr(form_module, "st", _FakeFormStreamlit(submitted=False))
 
-    assert form_module.render_customer_form() is None
+    assert form_module.render_customer_form(Locale.EN) is None
+
+
+def test_customer_form_uses_portuguese_labels_and_canonical_values(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_streamlit = _FakeFormStreamlit(submitted=True, locale=Locale.PT_BR)
+    monkeypatch.setattr(form_module, "st", fake_streamlit)
+
+    customer = form_module.render_customer_form(Locale.PT_BR)
+
+    assert customer is not None
+    assert customer.geography == "Germany"
+    assert customer.gender == "Female"
+    assert fake_streamlit.subheaders == ["Informações do cliente"]
+    assert fake_streamlit.number_labels == [
+        "Pontuação de crédito",
+        "Idade",
+        "Saldo",
+        "Salário estimado",
+        "Tempo como cliente",
+    ]
+    assert fake_streamlit.select_labels == [
+        "País",
+        "Gênero",
+        "Número de produtos",
+    ]
+    assert fake_streamlit.checkbox_labels == [
+        "Possui cartão de crédito",
+        "Cliente ativo",
+    ]
+    assert fake_streamlit.button_labels == ["Analisar cliente"]
 
 
 def test_render_result_displays_every_presentation_field(
@@ -73,7 +106,7 @@ def test_render_result_displays_every_presentation_field(
     monkeypatch.setattr(result_module, "st", fake_streamlit)
     presentation = _presentation_result()
 
-    result_module.render_result(presentation)
+    result_module.render_result(presentation, Locale.EN)
 
     rendered_values = [call[1] for call in fake_streamlit.calls]
     assert presentation.title in rendered_values
@@ -212,7 +245,7 @@ def test_main_renders_pipeline_result(monkeypatch: pytest.MonkeyPatch) -> None:
     presentation = _presentation_result()
 
     monkeypatch.setattr(app, "st", fake_streamlit)
-    monkeypatch.setattr(app, "render_customer_form", lambda: customer)
+    monkeypatch.setattr(app, "render_customer_form", lambda locale: customer)
     monkeypatch.setattr(app, "run_pipeline", lambda received: presentation)
     monkeypatch.setattr(app, "render_result", fake_streamlit.render_result)
 
@@ -222,8 +255,12 @@ def test_main_renders_pipeline_result(monkeypatch: pytest.MonkeyPatch) -> None:
         "page_title": "Bank Churn Risk Analysis",
         "layout": "wide",
     }
+    assert fake_streamlit.sidebar.selectbox_calls == [
+        ("Language / Idioma", ("English", "Português (Brasil)"), 0)
+    ]
     assert fake_streamlit.column_calls == [([0.9, 1.1], "large")]
     assert fake_streamlit.rendered_result is presentation
+    assert fake_streamlit.rendered_locale is Locale.EN
     assert fake_streamlit.render_result_calls == 1
     assert fake_streamlit.errors == []
     assert fake_streamlit.successes == ["Analysis completed."]
@@ -234,7 +271,7 @@ def test_main_renders_placeholder_before_analysis(
 ) -> None:
     fake_streamlit = _FakeAppStreamlit()
     monkeypatch.setattr(app, "st", fake_streamlit)
-    monkeypatch.setattr(app, "render_customer_form", lambda: None)
+    monkeypatch.setattr(app, "render_customer_form", lambda locale: None)
 
     def fail_if_called(customer: CustomerInput) -> PresentationResult:
         raise AssertionError("pipeline must not run before submit")
@@ -254,7 +291,7 @@ def test_main_renders_service_error_without_traceback(
 ) -> None:
     fake_streamlit = _FakeAppStreamlit()
     monkeypatch.setattr(app, "st", fake_streamlit)
-    monkeypatch.setattr(app, "render_customer_form", _customer_input)
+    monkeypatch.setattr(app, "render_customer_form", lambda locale: _customer_input())
 
     def fail_pipeline(customer: CustomerInput) -> PresentationResult:
         raise PredictionError("pipeline failed")
@@ -273,7 +310,7 @@ def test_main_renders_unexpected_error_without_traceback(
 ) -> None:
     fake_streamlit = _FakeAppStreamlit()
     monkeypatch.setattr(app, "st", fake_streamlit)
-    monkeypatch.setattr(app, "render_customer_form", _customer_input)
+    monkeypatch.setattr(app, "render_customer_form", lambda locale: _customer_input())
 
     def fail_pipeline(customer: CustomerInput) -> PresentationResult:
         raise ValueError("sensitive details")
@@ -290,10 +327,10 @@ def test_main_converts_result_rendering_exception_to_generic_error(
 ) -> None:
     fake_streamlit = _FakeAppStreamlit()
     monkeypatch.setattr(app, "st", fake_streamlit)
-    monkeypatch.setattr(app, "render_customer_form", _customer_input)
+    monkeypatch.setattr(app, "render_customer_form", lambda locale: _customer_input())
     monkeypatch.setattr(app, "run_pipeline", lambda customer: _presentation_result())
 
-    def fail_rendering(presentation: PresentationResult) -> None:
+    def fail_rendering(presentation: PresentationResult, locale: Locale) -> None:
         raise ValueError("rendering internals")
 
     monkeypatch.setattr(app, "render_result", fail_rendering)
@@ -301,6 +338,44 @@ def test_main_converts_result_rendering_exception_to_generic_error(
     app.main()
 
     assert fake_streamlit.errors == ["Unexpected internal error."]
+
+
+def test_render_result_translates_portuguese_business_content(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_streamlit = _FakeRenderStreamlit()
+    monkeypatch.setattr(result_module, "st", fake_streamlit)
+    presentation = _presentation_result()
+
+    result_module.render_result(presentation, Locale.PT_BR)
+
+    rendered_values = [call[1] for call in fake_streamlit.calls]
+    assert "Resultado da análise" in rendered_values
+    assert "Alto risco de churn" in rendered_values
+    assert "Nível de risco" in rendered_values
+    assert "ALTO" in rendered_values
+    assert "Prioridade da recomendação" in rendered_values
+    assert "ALTA" in rendered_values
+    assert "Previsões dos modelos" in rendered_values
+    assert "Previsão" in rendered_values
+    assert "Retenção" in rendered_values
+    assert "Probabilidade de churn: 61.7%" in rendered_values
+    assert "Probabilidade de churn: indisponível" in rendered_values
+    assert "Ações recomendadas" in rendered_values
+    assert "Detalhes da análise" in rendered_values
+    assert "Evidências" in rendered_values
+    assert "Justificativa de negócio" in rendered_values
+    assert "Resultado esperado" in rendered_values
+    assert "Como esta análise é produzida" in rendered_values
+    assert (
+        "Dados do cliente -> Previsões dos modelos -> Decisão de risco -> "
+        "Interpretação -> Recomendação"
+    ) in rendered_values
+    assert (
+        "Esta aplicação acadêmica de apoio à decisão não substitui o julgamento humano. "
+        "As probabilidades dos modelos são evidências auxiliares e não determinam "
+        "diretamente o nível de risco final."
+    ) in rendered_values
 
 
 def test_ui_modules_do_not_import_service_boundaries() -> None:
@@ -319,10 +394,12 @@ class _FormContext:
 
 
 class _FakeFormStreamlit:
-    def __init__(self, *, submitted: bool) -> None:
+    def __init__(self, *, submitted: bool, locale: Locale = Locale.EN) -> None:
         self.submitted = submitted
+        self.locale = locale
         self.form_key: str | None = None
         self.button_labels: list[str] = []
+        self.subheaders: list[str] = []
         self.number_labels: list[str] = []
         self.select_labels: list[str] = []
         self.checkbox_labels: list[str] = []
@@ -331,6 +408,9 @@ class _FakeFormStreamlit:
     def form(self, key: str) -> _FormContext:
         self.form_key = key
         return _FormContext()
+
+    def subheader(self, value: str) -> None:
+        self.subheaders.append(value)
 
     def columns(self, spec: object, **kwargs: object) -> tuple[_FormContext, ...]:
         self.column_calls.append((spec,))
@@ -346,6 +426,11 @@ class _FakeFormStreamlit:
             "Tenure": 3,
             "Balance": 1000.5,
             "Estimated Salary": 50000.0,
+            "Pontuação de crédito": 650,
+            "Idade": 42,
+            "Tempo como cliente": 3,
+            "Saldo": 1000.5,
+            "Salário estimado": 50000.0,
         }[label]
 
     def selectbox(self, label: str, options: tuple[object, ...]) -> object:
@@ -354,13 +439,16 @@ class _FakeFormStreamlit:
             "Geography": "Germany",
             "Gender": "Female",
             "Number of Products": 2,
+            "País": "Alemanha",
+            "Gênero": "Feminino",
+            "Número de produtos": 2,
         }[label]
         assert selected in options
         return selected
 
     def checkbox(self, label: str) -> bool:
         self.checkbox_labels.append(label)
-        return label == "Credit Card"
+        return label in {"Credit Card", "Possui cartão de crédito"}
 
     def form_submit_button(self, label: str, **kwargs: object) -> bool:
         self.button_labels.append(label)
@@ -425,6 +513,8 @@ class _FakeRenderStreamlit:
 class _FakeAppStreamlit:
     def __init__(self) -> None:
         self.page_config: dict[str, object] | None = None
+        self.session_state: dict[str, object] = {}
+        self.sidebar = _FakeSidebar(self.session_state)
         self.titles: list[str] = []
         self.writes: list[str] = []
         self.errors: list[str] = []
@@ -432,6 +522,7 @@ class _FakeAppStreamlit:
         self.successes: list[str] = []
         self.column_calls: list[tuple[object, object]] = []
         self.rendered_result: PresentationResult | None = None
+        self.rendered_locale: Locale | None = None
         self.render_result_calls = 0
 
     def set_page_config(self, **kwargs: object) -> None:
@@ -458,9 +549,26 @@ class _FakeAppStreamlit:
             return tuple(_FormContext() for _ in range(spec))
         return tuple(_FormContext() for _ in spec)  # type: ignore[arg-type]
 
-    def render_result(self, result: PresentationResult) -> None:
+    def render_result(self, result: PresentationResult, locale: Locale) -> None:
         self.render_result_calls += 1
         self.rendered_result = result
+        self.rendered_locale = locale
+
+
+class _FakeSidebar:
+    def __init__(self, session_state: dict[str, object]) -> None:
+        self.session_state = session_state
+        self.selectbox_calls: list[tuple[str, tuple[str, ...], int]] = []
+
+    def selectbox(
+        self,
+        label: str,
+        options: list[str],
+        *,
+        index: int,
+    ) -> str:
+        self.selectbox_calls.append((label, tuple(options), index))
+        return options[index]
 
 
 @dataclass(frozen=True, slots=True)

@@ -10,6 +10,7 @@ from __future__ import annotations
 import streamlit as st
 
 from churn_app.domain import CustomerInput, PresentationResult
+from churn_app.i18n import Locale, translate
 from churn_app.services.artifact_loader import ArtifactError, load_model_artifacts
 from churn_app.services.decision_policy import (
     DecisionPolicyError,
@@ -29,6 +30,12 @@ from churn_app.services.risk_interpreter import RiskInterpreterError, interpret_
 from churn_app.ui.form import render_customer_form
 from churn_app.ui.result import render_result
 
+_LOCALE_BY_LABEL = {
+    "English": Locale.EN,
+    "Português (Brasil)": Locale.PT_BR,
+}
+_LABEL_BY_LOCALE = {locale: label for label, locale in _LOCALE_BY_LABEL.items()}
+
 
 def run_pipeline(customer: CustomerInput) -> PresentationResult:
     """Run the approved service pipeline for one validated form submission."""
@@ -43,47 +50,60 @@ def run_pipeline(customer: CustomerInput) -> PresentationResult:
 
 def main() -> None:
     """Render the Streamlit interface and delegate submitted data to services."""
+    locale = render_language_selector()
     st.set_page_config(
-        page_title="Bank Churn Risk Analysis",
+        page_title=translate(locale, "app.title"),
         layout="wide",
     )
-    st.title("Bank Churn Risk Analysis")
-    st.write(
-        "Academic decision-support interface for analyzing bank customer churn risk."
-    )
+    st.title(translate(locale, "app.title"))
+    st.write(translate(locale, "app.description"))
 
     form_column, result_column = st.columns([0.9, 1.1], gap="large")
     with form_column:
-        customer = render_customer_form()
+        customer = render_customer_form(locale)
 
     with result_column:
         if customer is None:
-            st.info(
-                "Complete the customer form and select Analyze Customer to "
-                "generate the churn risk analysis."
-            )
+            st.info(translate(locale, "result.placeholder"))
             return
 
         try:
             presentation = run_pipeline(customer)
-            st.success("Analysis completed.")
-            render_result(presentation)
+            st.success(translate(locale, "result.completed"))
+            render_result(presentation, locale)
         except InputValidationError:
-            st.error("Invalid customer input. Review the form values and try again.")
+            st.error(translate(locale, "error.invalid_input"))
         except ArtifactError:
-            st.error("Model artifacts are unavailable or failed integrity validation.")
+            st.error(translate(locale, "error.artifact"))
         except PredictionError:
-            st.error("The prediction service could not produce a valid model result.")
+            st.error(translate(locale, "error.prediction"))
         except DecisionPolicyError:
-            st.error("The risk decision policy could not process the model outputs.")
+            st.error(translate(locale, "error.decision_policy"))
         except RiskInterpreterError:
-            st.error("The risk interpretation could not be generated.")
+            st.error(translate(locale, "error.interpretation"))
         except RecommendationEngineError:
-            st.error("The business recommendation could not be generated.")
+            st.error(translate(locale, "error.recommendation"))
         except PresentationLayerError:
-            st.error("The presentation result could not be composed.")
+            st.error(translate(locale, "error.presentation"))
         except Exception:  # noqa: BLE001 - UI boundary must hide unexpected tracebacks.
-            st.error("Unexpected internal error.")
+            st.error(translate(locale, "error.unexpected"))
+
+
+def render_language_selector() -> Locale:
+    """Render and persist the selected UI locale."""
+    current_locale = st.session_state.get("locale", Locale.EN)
+    if type(current_locale) is not Locale:
+        current_locale = Locale.EN
+
+    options = list(_LOCALE_BY_LABEL)
+    selected_label = st.sidebar.selectbox(
+        translate(Locale.EN, "language.selector"),
+        options,
+        index=options.index(_LABEL_BY_LOCALE[current_locale]),
+    )
+    locale = _LOCALE_BY_LABEL[selected_label]
+    st.session_state["locale"] = locale
+    return locale
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ decisao automatica ou deterministica sobre clientes reais.
 - Derivacao interna da feature `ProductsGroup`.
 - Execucao independente dos pipelines Gradient Boosting e Decision Tree.
 - Exibicao das probabilidades individuais dos modelos quando disponiveis.
+- Interface bilingue em ingles e portugues brasileiro.
 - Politica de risco em quatro niveis: `LOW`, `MODERATE`, `HIGH`, `CRITICAL`.
 - Interpretacao deterministica do nivel de risco e da concordancia entre os
   modelos.
@@ -115,6 +116,15 @@ http://localhost:8501
 
 O usuario nao informa `ProductsGroup`; essa feature e derivada internamente a
 partir de `Number of Products`.
+
+Para alternar o idioma da interface, use o seletor `Language / Idioma` na barra
+lateral. A aplicacao suporta:
+
+- English;
+- Portugues (Brasil).
+
+Os valores internos enviados aos modelos permanecem canonicos mesmo quando os
+rotulos visiveis da interface estao em portugues.
 
 ## Comportamento dos niveis de risco
 
